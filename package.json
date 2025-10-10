@@ -1,0 +1,69 @@
+{
+  "name": "resolver",
+  "version": "1.0.0",
+  "description": "A dependency-aware task resolver using RxJS observables for asynchronous execution",
+  "author": "Robin Wunderbaldinger",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "rxjs",
+    "dependency",
+    "resolver",
+    "async",
+    "observable",
+    "typescript",
+    "task",
+    "execution"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc --project tsconfig.json --rootDir src",
+    "lint": "prettier --check src/**/*.ts && eslint src/**/*.ts",
+    "test": "vitest run && tsc --noEmit --project tests/tsconfig.json",
+    "check": "pnpm lint && pnpm test",
+    "prepack": "pnpm build && clean-package",
+    "postpack": "clean-package restore"
+  },
+  "dependencies": {
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.37.0",
+    "@types/node": "24.7.1",
+    "@typescript-eslint/eslint-plugin": "8.46.0",
+    "@typescript-eslint/parser": "8.46.0",
+    "@vitest/coverage-v8": "3.2.4",
+    "clean-package": "2.2.0",
+    "eslint": "9.37.0",
+    "eslint-config-prettier": "10.1.8",
+    "prettier": "3.6.2",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4"
+  },
+  "packageManager": "pnpm@10.18.2+sha512.9fb969fa749b3ade6035e0f109f0b8a60b5d08a1a87fdf72e337da90dcc93336e2280ca4e44f2358a649b83c17959e9993e777c2080879f3801e6f0d999ad3dd",
+  "clean-package": {
+    "remove": [
+      "clean-package",
+      "devDependencies",
+      "packageManager",
+      "scripts"
+    ]
+  }
+}

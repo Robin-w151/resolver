@@ -1,5 +1,5 @@
 {
-  "name": "resolver",
+  "name": "@robinw151/resolver",
   "version": "1.0.0",
   "description": "A dependency-aware task resolver using RxJS observables for asynchronous execution",
   "author": "Robin Wunderbaldinger",

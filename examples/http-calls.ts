@@ -47,7 +47,7 @@ const resolver = new Resolver()
     ['fetchObjects'],
   );
 
-const result = resolver.resolve();
+const result = resolver.resolve({ withLoadingState: true });
 
 /* eslint-disable no-undef */
 result
@@ -55,10 +55,10 @@ result
     tap((result) => {
       if (isLoading(result)) {
         console.log('Loading...');
-      } else if (isError(result.fetchFirstObjectById)) {
+      } else if (isError(result.tasks.fetchFirstObjectById)) {
         console.log('Error:', result);
       } else {
-        console.log('Result:', JSON.stringify(result.fetchFirstObjectById.data, undefined, 2));
+        console.log('Result:', JSON.stringify(result.tasks.fetchFirstObjectById.data, undefined, 2));
       }
     }),
   )

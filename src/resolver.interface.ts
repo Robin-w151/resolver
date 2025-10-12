@@ -2,25 +2,36 @@ import type { Observable } from 'rxjs';
 import type { Resolver } from './resolver.js';
 
 // Resolver
-export type ResolverType<TResult = object, TId extends string = string, TTaskResult = unknown> = Resolver<
+export type ResolverType<
+  TResult = object,
+  TId extends string = string,
+  TGlobalArgs = unknown,
+  TTaskResult = unknown,
+> = Resolver<
+  TGlobalArgs,
   TResult & {
     [K in TId]: TaskResult<RxjsAwaited<TTaskResult>>;
   }
 >;
 
-export type ResolverResult<TResult> = Observable<TResult & { _hasErrors?: boolean }>;
+export type ResolverResult<TGlobalArgs, TResult> = Observable<{
+  globalArgs: TGlobalArgs;
+  tasks: TResult;
+  hasErrors?: boolean;
+}>;
 
-export type ResolverResultWithLoadingState<TResult> = Observable<
-  (TResult | { _loading: true }) & { _hasErrors?: boolean }
+export type ResolverResultWithLoadingState<TGlobalArgs, TResult> = Observable<
+  ({ globalArgs: TGlobalArgs; tasks: TResult } | { loading: true }) & { hasErrors?: boolean }
 >;
 
 // Task
-export interface Task<TId extends string, TArgs = unknown, TResult = unknown> {
+export interface Task<TId extends string, TArgs = unknown, TGlobalArgs = unknown, TResult = unknown> {
   readonly id: TId;
-  fn: (args: TArgs) => TResult | Promise<TResult> | Observable<TResult>;
+  fn: (args: TArgs, globalArgs: TGlobalArgs) => TResult | Promise<TResult> | Observable<TResult>;
 }
 
-export interface TaskInfo<TId extends string, TArgs = unknown, TResult = unknown> extends Task<TId, TArgs, TResult> {
+export interface TaskInfo<TId extends string, TArgs = unknown, TGlobalArgs = unknown, TResult = unknown>
+  extends Task<TId, TArgs, TGlobalArgs, TResult> {
   consumers: Array<string>;
   producers: Array<string>;
 }

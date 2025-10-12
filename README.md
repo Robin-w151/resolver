@@ -1,5 +1,8 @@
 # Resolver
 
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Robin-w151/resolver/ci.yaml?branch=main&style=for-the-badge&label=CI)
+![GitHub License](https://img.shields.io/github/license/Robin-w151/resolver?style=for-the-badge&color=blue)
+
 A dependency-aware task resolver using RxJS observables for asynchronous execution. This library allows you to define tasks with dependencies and automatically resolves them in the correct order.
 
 ## Features
@@ -24,7 +27,7 @@ yarn add resolver
 ### Basic Example
 
 ```typescript
-import { lastValueFrom, of } from 'rxjs';
+import { lastValueFrom } from 'rxjs';
 import { Resolver, isSuccess } from 'resolver';
 
 // Create a resolver instance
@@ -32,12 +35,12 @@ const resolver = new Resolver()
   // Register task A with no dependencies
   .register({
     id: 'A',
-    fn: () => of('Hello'),
+    fn: () => 'Hello',
   })
   // Register task B with no dependencies
   .register({
     id: 'B',
-    fn: () => of('World'),
+    fn: () => 'World',
   })
   // Register task C that depends on A and B
   .register(
@@ -45,7 +48,7 @@ const resolver = new Resolver()
       id: 'C',
       fn: ({ A, B }) => {
         if (isSuccess(A) && isSuccess(B)) {
-          return of(`${A.data} ${B.data}!`);
+          return `${A.data} ${B.data}!`;
         }
         throw new Error('Missing dependencies');
       },
@@ -55,31 +58,31 @@ const resolver = new Resolver()
 
 // Resolve all tasks
 const result = await lastValueFrom(resolver.resolve());
-console.log(result); // { A: { data: 'Hello' }, B: { data: 'World' }, C: { data: 'Hello World!' } }
+console.log(result); // { tasks: { A: { data: 'Hello' }, B: { data: 'World' }, C: { data: 'Hello World!' } } }
 ```
 
 ### Advanced Example with Error Handling
 
 ```typescript
-import { lastValueFrom, of, throwError } from 'rxjs';
-import { Resolver, isSuccess } from 'resolver';
+import { lastValueFrom } from 'rxjs';
+import { Resolver, isSuccess, isError } from 'resolver';
 
 const resolver = new Resolver()
   .register({
     id: 'fetchUser',
-    fn: () => of({ id: 1, name: 'John' }),
+    fn: () => ({ id: 1, name: 'John' }),
   })
   .register(
     {
       id: 'fetchPosts',
       fn: ({ fetchUser }) => {
         if (isSuccess(fetchUser)) {
-          return of([
+          return [
             { id: 1, title: 'Post 1' },
             { id: 2, title: 'Post 2' },
-          ]);
+          ];
         }
-        return throwError(() => new Error('User not found'));
+        throw new Error('User not found');
       },
     },
     ['fetchUser'],
@@ -89,13 +92,13 @@ const resolver = new Resolver()
       id: 'generateReport',
       fn: ({ fetchUser, fetchPosts }) => {
         if (isSuccess(fetchUser) && isSuccess(fetchPosts)) {
-          return of({
+          return {
             user: fetchUser.data,
             postCount: fetchPosts.data.length,
             timestamp: new Date().toISOString(),
-          });
+          };
         }
-        return throwError(() => new Error('Missing data for report'));
+        throw new Error('Missing data for report');
       },
     },
     ['fetchUser', 'fetchPosts'],
@@ -103,7 +106,16 @@ const resolver = new Resolver()
 
 try {
   const result = await lastValueFrom(resolver.resolve());
-  console.log(result);
+
+  // Check for errors using utility functions
+  console.log('Some tasks failed during resolution');
+
+  if (isError(result.tasks.fetchUser)) {
+    console.error('User fetch failed:', result.tasks.fetchUser.error);
+  }
+  if (isError(result.tasks.fetchPosts)) {
+    console.error('Posts fetch failed:', result.tasks.fetchPosts.error);
+  }
 } catch (error) {
   console.error('Resolution failed:', error);
 }
@@ -114,20 +126,28 @@ try {
 The resolver provides full TypeScript support with type inference:
 
 ```typescript
+import { isSuccess, isError } from 'resolver';
+
 const resolver = new Resolver<{
   user: { id: number; name: string };
   posts: Array<{ id: number; title: string }>;
 }>()
   .register({
     id: 'user',
-    fn: () => of({ id: 1, name: 'John' }),
+    fn: () => ({ id: 1, name: 'John' }),
   })
   .register(
     {
       id: 'posts',
       fn: ({ user }) => {
         // user is typed as { data: { id: number; name: string } } | { error: unknown }
-        return of([{ id: 1, title: 'Post 1' }]);
+        if (isSuccess(user)) {
+          console.log('User loaded:', user.data.name);
+          return [{ id: 1, title: 'Post 1' }];
+        } else {
+          console.error('User failed to load:', user.error);
+          return [];
+        }
       },
     },
     ['user'],
@@ -145,12 +165,12 @@ Tasks can return either successful data or errors. The resolver handles both cas
 
 The resolver provides status attributes to help track resolution progress and detect errors:
 
-- **`_loading`**: Emitted as the first value (`{ _loading: true }`) in the observable stream, indicating that resolution is in progress
-- **`_hasErrors`**: Included in the final result as either `true` (if any task failed) or `undefined` (if all tasks succeeded)
+- **`loading`**: Emitted as the first value (`{ loading: true }`) in the observable stream, indicating that resolution is in progress
+- **`hasErrors`**: Included in the final result as either `true` (if any task failed) or `undefined` (if all tasks succeeded)
 
 ```typescript
 import { lastValueFrom, of } from 'rxjs';
-import { Resolver, isSuccess } from 'resolver';
+import { Resolver, isLoading } from 'resolver';
 
 const resolver = new Resolver()
   .register({
@@ -164,10 +184,10 @@ const resolver = new Resolver()
 
 // Subscribe to track loading state and errors
 resolver.resolve().subscribe((result) => {
-  if ('_loading' in result) {
+  if (isLoading(result)) {
     console.log('Resolution in progress...');
   } else {
-    if (result._hasErrors) {
+    if (result.hasErrors) {
       console.log('Some tasks failed');
     } else {
       console.log('All tasks completed successfully');
@@ -175,6 +195,64 @@ resolver.resolve().subscribe((result) => {
     console.log('Final result:', result);
   }
 });
+```
+
+## Global Arguments
+
+The resolver supports global arguments that are passed to all task functions during execution. This is useful for sharing configuration, API keys, or other context across all tasks.
+
+### Constructor Global Arguments
+
+You can provide global arguments when creating a resolver instance:
+
+```typescript
+import { lastValueFrom } from 'rxjs';
+import { Resolver } from 'resolver';
+
+// Create resolver with global arguments
+const resolver = new Resolver({ apiKey: 'your-api-key', baseUrl: 'https://api.example.com' })
+  .register({
+    id: 'fetchUser',
+    fn: (_args, globalArgs) => {
+      // globalArgs is typed as { apiKey: string; baseUrl: string }
+      return fetch(`${globalArgs.baseUrl}/user`, {
+        headers: { Authorization: `Bearer ${globalArgs.apiKey}` },
+      });
+    },
+  })
+  .register({
+    id: 'fetchPosts',
+    fn: (_args, globalArgs) => {
+      return fetch(`${globalArgs.baseUrl}/posts`, {
+        headers: { Authorization: `Bearer ${globalArgs.apiKey}` },
+      });
+    },
+  });
+
+const result = await lastValueFrom(resolver.resolve());
+console.log(result.globalArgs); // { apiKey: 'your-api-key', baseUrl: 'https://api.example.com' }
+```
+
+### Dynamic Global Arguments
+
+You can update global arguments after creating the resolver using `setGlobalArgs()`:
+
+```typescript
+const resolver = new Resolver({ version: 'v1' }).register({
+  id: 'getVersion',
+  fn: (_args, globalArgs) => globalArgs.version,
+});
+
+// First resolution
+const result1 = await lastValueFrom(resolver.resolve());
+console.log(result1.globalArgs.version); // 'v1'
+
+// Update global arguments
+resolver.setGlobalArgs({ version: 'v2' });
+
+// Second resolution with updated arguments
+const result2 = await lastValueFrom(resolver.resolve());
+console.log(result2.globalArgs.version); // 'v2'
 ```
 
 ## Resolve Options
@@ -188,26 +266,28 @@ interface ResolveOptions {
 }
 ```
 
-### `withLoadingState` (default: `true`)
+### `withLoadingState` (default: `false`)
 
 Controls whether the resolver emits a loading state as the first value in the observable stream.
 
-- **`true`** (default): Emits `{ _loading: true }` as the first value, followed by the final result
-- **`false`**: Only emits the final result without the loading state
+- **`false`** (default): Only emits the final result without the loading state
+- **`true`**: Emits `{ loading: true }` as the first value, followed by the final result
 
 ```typescript
-// With loading state (default behavior)
+import { isLoading } from 'resolver';
+
+// Without loading state (default behavior)
 resolver.resolve().subscribe((result) => {
-  if ('_loading' in result) {
+  console.log('Final result:', result);
+});
+
+// With loading state
+resolver.resolve({ withLoadingState: true }).subscribe((result) => {
+  if (isLoading(result)) {
     console.log('Resolution in progress...');
   } else {
     console.log('Final result:', result);
   }
-});
-
-// Without loading state
-resolver.resolve({ withLoadingState: false }).subscribe((result) => {
-  console.log('Final result:', result);
 });
 ```
 
@@ -225,16 +305,48 @@ resolver.resolve({ maxIterations: 50 }).subscribe({
   next: (result) => console.log('Result:', result),
   error: (error) => console.error('Resolution failed:', error.message),
 });
+```
 
-// Combined options
-resolver
-  .resolve({
-    withLoadingState: false,
-    maxIterations: 200,
-  })
-  .subscribe((result) => {
-    console.log('Final result:', result);
-  });
+## Utility Functions
+
+The resolver provides several utility functions to help you work with task results and resolver states:
+
+### `isSuccess(value)`
+
+Type guard that checks if a task result contains successful data.
+
+```typescript
+import { isSuccess } from 'resolver';
+
+if (isSuccess(taskResult)) {
+  // taskResult is typed as { data: TValue }
+  console.log(taskResult.data);
+}
+```
+
+### `isError(value)`
+
+Type guard that checks if a task result contains an error.
+
+```typescript
+import { isError } from 'resolver';
+
+if (isError(taskResult)) {
+  // taskResult is typed as { error: unknown }
+  console.error(taskResult.error);
+}
+```
+
+### `isLoading(value)`
+
+Type guard that checks if a resolver result is in a loading state.
+
+```typescript
+import { isLoading } from 'resolver';
+
+if (isLoading(resolverResult)) {
+  console.log('Resolution is still in progress...');
+}
 ```
 
 ## License

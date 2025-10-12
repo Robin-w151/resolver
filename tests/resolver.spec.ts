@@ -1,7 +1,7 @@
-import { firstValueFrom, lastValueFrom, throwError } from 'rxjs';
+import { delay, finalize, firstValueFrom, lastValueFrom, of, throwError } from 'rxjs';
 import { describe, expect, test, vi } from 'vitest';
-import { isError, isSuccess, Resolver, RESOLVER_MAX_ITERATIONS } from '../src/resolver.js';
 import type { TaskResult } from '../src/resolver.interface.js';
+import { isError, isLoading, isSuccess, Resolver, RESOLVER_MAX_ITERATIONS } from '../src/resolver.js';
 
 describe('Resolver', () => {
   test('empty task graph', async () => {
@@ -9,7 +9,7 @@ describe('Resolver', () => {
 
     const result = await lastValueFrom(resolver.resolve());
 
-    expect(result).toEqual({});
+    expect(result).toEqual({ globalArgs: undefined, tasks: {}, hasErrors: undefined });
   });
 
   test('single task graph', async () => {
@@ -17,7 +17,7 @@ describe('Resolver', () => {
 
     const result = await lastValueFrom(resolver.resolve());
 
-    expect(result).toEqual({ A: { data: 1 } });
+    expect(result).toEqual({ tasks: { A: { data: 1 } } });
   });
 
   test('every task is called once', async () => {
@@ -62,7 +62,7 @@ describe('Resolver', () => {
 
     const result = await lastValueFrom(resolver.resolve());
 
-    expect(result).toEqual({ A: { data: 1 }, B: { data: 2 }, C: { data: 3 }, D: { data: 4 } });
+    expect(result).toEqual({ tasks: { A: { data: 1 }, B: { data: 2 }, C: { data: 3 }, D: { data: 4 } } });
     expect(taskA).toHaveBeenCalledOnce();
     expect(taskB).toHaveBeenCalledOnce();
     expect(taskC).toHaveBeenCalledOnce();
@@ -111,11 +111,13 @@ describe('Resolver', () => {
     const result = await lastValueFrom(resolver.resolve());
 
     expect(result).toEqual({
-      A: { error: new Error('Error in A') },
-      B: { data: 2 },
-      C: { data: 2 },
-      D: { data: 2 },
-      _hasErrors: true,
+      hasErrors: true,
+      tasks: {
+        A: { error: new Error('Error in A') },
+        B: { data: 2 },
+        C: { data: 2 },
+        D: { data: 2 },
+      },
     });
   });
 
@@ -132,9 +134,11 @@ describe('Resolver', () => {
     const result = await lastValueFrom(resolver.resolve());
 
     expect(result).toEqual({
-      A: { error: new Error('Error in A') },
-      B: { data: 2 },
-      _hasErrors: true,
+      hasErrors: true,
+      tasks: {
+        A: { error: new Error('Error in A') },
+        B: { data: 2 },
+      },
     });
   });
 
@@ -186,12 +190,14 @@ describe('Resolver', () => {
     const result = await lastValueFrom(resolver.resolve());
 
     expect(result).toEqual({
-      A: { data: 1 },
-      B: { data: 2 },
-      C: { data: 6 },
-      D: { data: 4 },
-      E: { data: 15 },
-      F: { data: 27 },
+      tasks: {
+        A: { data: 1 },
+        B: { data: 2 },
+        C: { data: 6 },
+        D: { data: 4 },
+        E: { data: 15 },
+        F: { data: 27 },
+      },
     });
   });
 
@@ -199,7 +205,7 @@ describe('Resolver', () => {
     const resolver = new Resolver()
       .register({ id: 'A', fn: () => 1 })
       .register({ id: 'B', fn: () => 2 })
-      .register({ id: 'D', fn: () => throwError(() => new Error('Error in D')) })
+      .register({ id: 'D', fn: () => Promise.reject(new Error('Error in D')) })
       .register(
         {
           id: 'C',
@@ -243,14 +249,30 @@ describe('Resolver', () => {
     const result = await lastValueFrom(resolver.resolve());
 
     expect(result).toEqual({
-      A: { data: 1 },
-      B: { data: 2 },
-      C: { data: 6 },
-      D: { error: new Error('Error in D') },
-      E: { error: new Error('Error in C or D') },
-      F: { error: new Error('Error in C or E') },
-      _hasErrors: true,
+      hasErrors: true,
+      tasks: {
+        A: { data: 1 },
+        B: { data: 2 },
+        C: { data: 6 },
+        D: { error: new Error('Error in D') },
+        E: { error: new Error('Error in C or D') },
+        F: { error: new Error('Error in C or E') },
+      },
     });
+  });
+
+  test('task graph with global args', async () => {
+    const resolver = new Resolver('Hello').register({ id: 'A', fn: (_args, globalArgs) => `${globalArgs}, World!` });
+
+    const result = await lastValueFrom(resolver.resolve());
+
+    expect(result).toEqual({ globalArgs: 'Hello', tasks: { A: { data: 'Hello, World!' } } });
+
+    resolver.setGlobalArgs('Goodbye');
+
+    const result2 = await lastValueFrom(resolver.resolve());
+
+    expect(result2).toEqual({ globalArgs: 'Goodbye', tasks: { A: { data: 'Goodbye, World!' } } });
   });
 
   test('task graph with too many iterations', async () => {
@@ -262,12 +284,21 @@ describe('Resolver', () => {
     await expect(lastValueFrom(resolver.resolve())).rejects.toThrowError('Max iterations reached');
   });
 
-  test('task graph without loading state', async () => {
+  test('task graph with explicit loading state', async () => {
     const resolver = new Resolver().register({ id: 'A', fn: () => 1 }).register({ id: 'B', fn: () => 2 });
 
-    const result = await firstValueFrom(resolver.resolve({ withLoadingState: false }));
+    const result = await firstValueFrom(resolver.resolve({ withLoadingState: true }));
 
-    expect(result).toEqual({ A: { data: 1 }, B: { data: 2 } });
+    expect(isLoading(result)).toBe(true);
+    expect(result).toEqual({ loading: true });
+  });
+
+  test('task graph with default behavior (no loading state)', async () => {
+    const resolver = new Resolver().register({ id: 'A', fn: () => 1 }).register({ id: 'B', fn: () => 2 });
+
+    const result = await firstValueFrom(resolver.resolve());
+
+    expect(result).toEqual({ tasks: { A: { data: 1 }, B: { data: 2 } } });
   });
 
   test('task graph with duplicate task id', () => {
@@ -277,5 +308,34 @@ describe('Resolver', () => {
       // @ts-expect-error - Duplicate task id
       resolver.register({ id: 'A', fn: () => 2 });
     }).toThrowError("Task with id 'A' has already been registered");
+  });
+
+  test('task graph with missing dependency', () => {
+    const resolver = new Resolver().register({ id: 'A', fn: () => 1 });
+
+    expect(() => {
+      // @ts-expect-error - Missing dependency
+      resolver.register({ id: 'B', fn: () => 2 }, ['C']);
+    }).toThrowError("Task with id 'B' has dependencies that have not been registered");
+  });
+
+  test('task graph with long running task and cancellation', async () => {
+    const started = vi.fn();
+    const finalizer = vi.fn();
+    const resolver = new Resolver().register({
+      id: 'A',
+      fn: () => {
+        started();
+        return of(1).pipe(delay(1000), finalize(finalizer));
+      },
+    });
+
+    const result = resolver.resolve();
+    const subscription = result.subscribe();
+
+    subscription.unsubscribe();
+
+    expect(started).toHaveBeenCalledOnce();
+    expect(finalizer).toHaveBeenCalledOnce();
   });
 });

@@ -1,28 +1,37 @@
-import { delay, lastValueFrom, of, throwError } from 'rxjs';
+/* eslint-disable no-undef */
+import { delay, finalize, lastValueFrom, of, throwError } from 'rxjs';
 import { isSuccess, Resolver } from '../src/resolver.js';
 
-const resolver = new Resolver()
+const logTask = (message: string) => {
+  console.log(`${new Date().toISOString()}: ${message}`);
+};
+
+const logResult = (result: unknown) => {
+  console.log('\n#################################\n\nResult:', result);
+};
+
+const resolver = new Resolver({ base: 0 } as const)
   .register({
     id: 'A',
-    fn: () => {
-      console.log('A');
-      return 1;
+    fn: (_, { base }) => {
+      logTask('A start');
+      return of(base + 1).pipe(finalize(() => logTask('A done')));
     },
   })
   .register({
     id: 'B',
-    fn: () => {
-      console.log('B');
-      return 2;
+    fn: (_, { base }) => {
+      logTask('B start');
+      return of(base + 2).pipe(finalize(() => logTask('B done')));
     },
   })
   .register(
     {
       id: 'C',
       fn: ({ A, B }) => {
-        console.log('C');
+        logTask('C start');
         if (isSuccess(A) && isSuccess(B)) {
-          return A.data + B.data;
+          return of(A.data + B.data).pipe(finalize(() => logTask('C done')));
         }
 
         return throwError(() => new Error('Error in A or B'));
@@ -34,9 +43,12 @@ const resolver = new Resolver()
     {
       id: 'D',
       fn: ({ A, C }) => {
-        console.log('D');
+        logTask('D start');
         if (isSuccess(A) && isSuccess(C)) {
-          return of(A.data + C.data).pipe(delay(2000));
+          return of(A.data + C.data).pipe(
+            delay(3000),
+            finalize(() => logTask('D done')),
+          );
         }
         return throwError(() => new Error('Error in A or C'));
       },
@@ -47,14 +59,28 @@ const resolver = new Resolver()
     {
       id: 'E',
       fn: () => {
-        console.log('E');
-        return of(5).pipe(delay(1000));
+        logTask('E start');
+        return of(5).pipe(
+          delay(1000),
+          finalize(() => logTask('E done')),
+        );
       },
     },
     [],
+  )
+  .register(
+    {
+      id: 'F',
+      fn: () => {
+        logTask('F start');
+        return of(6).pipe(
+          delay(1000),
+          finalize(() => logTask('F done')),
+        );
+      },
+    },
+    ['E'],
   );
 
 const result = await lastValueFrom(resolver.resolve());
-
-/* eslint-disable no-undef */
-console.log(result);
+logResult(result);

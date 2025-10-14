@@ -5,10 +5,10 @@ import type { Equal, Expect } from './type-test-util.js';
 
 // ResolverType
 type resolverTypeTests = [
-  Expect<Equal<ResolverType<{}, 'A', string, number>, Resolver<string, { A: TaskResult<number> }>>>,
+  Expect<Equal<ResolverType<string, {}, 'A', number>, Resolver<string, { A: TaskResult<number> }>>>,
   Expect<
     Equal<
-      ResolverType<{ A: TaskResult<number> }, 'B', symbol, string>,
+      ResolverType<symbol, { A: TaskResult<number> }, 'B', string>,
       Resolver<symbol, { A: TaskResult<number> } & { B: TaskResult<string> }>
     >
   >,

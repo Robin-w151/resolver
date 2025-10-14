@@ -3,9 +3,9 @@ import type { Resolver } from './resolver.js';
 
 // Resolver
 export type ResolverType<
+  TGlobalArgs = unknown,
   TResult = object,
   TId extends string = string,
-  TGlobalArgs = unknown,
   TTaskResult = unknown,
 > = Resolver<
   TGlobalArgs,

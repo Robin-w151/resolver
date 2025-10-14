@@ -167,7 +167,7 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
     this: Resolver<TGlobalArgs, TResult>,
     task: Task<TaskId<TResult, TId>, TaskDependencies<TTaskDependencies, TResult>, TGlobalArgs, TTaskResult>,
     dependencies?: TTaskDependencies,
-  ): ResolverType<TResult, TId, TGlobalArgs, TTaskResult> {
+  ): ResolverType<TGlobalArgs, TResult, TId, TTaskResult> {
     if (this.tasks.has(task.id)) {
       throw new Error(`Task with id '${task.id}' has already been registered`);
     }
@@ -185,7 +185,7 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
       }
     }
 
-    return this as ResolverType<TResult, TId, TGlobalArgs, TTaskResult>;
+    return this as ResolverType<TGlobalArgs, TResult, TId, TTaskResult>;
   }
 
   /**

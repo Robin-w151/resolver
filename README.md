@@ -15,11 +15,11 @@ A dependency-aware task resolver using RxJS observables for asynchronous executi
 ## Installation
 
 ```bash
-npm install resolver
+npm install @robinw151/resolver
 # or
-pnpm add resolver
+pnpm add @robinw151/resolver
 # or
-yarn add resolver
+yarn add @robinw151/resolver
 ```
 
 ## Usage
@@ -28,7 +28,7 @@ yarn add resolver
 
 ```typescript
 import { lastValueFrom } from 'rxjs';
-import { Resolver, isSuccess } from 'resolver';
+import { Resolver, isSuccess } from '@robinw151/resolver';
 
 // Create a resolver instance
 const resolver = new Resolver()
@@ -65,7 +65,7 @@ console.log(result); // { tasks: { A: { data: 'Hello' }, B: { data: 'World' }, C
 
 ```typescript
 import { lastValueFrom } from 'rxjs';
-import { Resolver, isSuccess, isError } from 'resolver';
+import { Resolver, isSuccess, isError } from '@robinw151/resolver';
 
 const resolver = new Resolver()
   .register({
@@ -126,7 +126,7 @@ try {
 The resolver provides full TypeScript support with type inference:
 
 ```typescript
-import { isSuccess, isError } from 'resolver';
+import { isSuccess, isError } from '@robinw151/resolver';
 
 const resolver = new Resolver<{
   user: { id: number; name: string };
@@ -170,7 +170,7 @@ The resolver provides status attributes to help track resolution progress and de
 
 ```typescript
 import { lastValueFrom, of } from 'rxjs';
-import { Resolver, isLoading } from 'resolver';
+import { Resolver, isLoading } from '@robinw151/resolver';
 
 const resolver = new Resolver()
   .register({
@@ -207,7 +207,7 @@ You can provide global arguments when creating a resolver instance:
 
 ```typescript
 import { lastValueFrom } from 'rxjs';
-import { Resolver } from 'resolver';
+import { Resolver } from '@robinw151/resolver';
 
 // Create resolver with global arguments
 const resolver = new Resolver({ apiKey: 'your-api-key', baseUrl: 'https://api.example.com' })
@@ -307,7 +307,7 @@ Controls whether the resolver emits a loading state as the first value in the ob
 - **`true`**: Emits `{ loading: true }` as the first value, followed by the final result
 
 ```typescript
-import { isLoading } from 'resolver';
+import { isLoading } from '@robinw151/resolver';
 
 // Without loading state (default behavior)
 resolver.resolve().subscribe((result) => {
@@ -349,7 +349,7 @@ The resolver provides several utility functions to help you work with task resul
 Type guard that checks if a task result contains successful data.
 
 ```typescript
-import { isSuccess } from 'resolver';
+import { isSuccess } from '@robinw151/resolver';
 
 if (isSuccess(taskResult)) {
   // taskResult is typed as { data: TValue }
@@ -362,7 +362,7 @@ if (isSuccess(taskResult)) {
 Type guard that checks if a task result contains an error.
 
 ```typescript
-import { isError } from 'resolver';
+import { isError } from '@robinw151/resolver';
 
 if (isError(taskResult)) {
   // taskResult is typed as { error: unknown }
@@ -375,7 +375,7 @@ if (isError(taskResult)) {
 Type guard that checks if a resolver result is in a loading state.
 
 ```typescript
-import { isLoading } from 'resolver';
+import { isLoading } from '@robinw151/resolver';
 
 if (isLoading(resolverResult)) {
   console.log('Resolution is still in progress...');

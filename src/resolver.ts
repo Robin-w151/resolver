@@ -50,7 +50,7 @@ export const RESOLVER_MAX_ITERATIONS = 100;
  *
  * @example
  * ```typescript
- * import { Resolver, isSuccess, isError } from 'resolver';
+ * import { Resolver, isSuccess, isError } from '@robinw151/resolver';
  *
  * // Create a resolver for user and posts data
  * const resolver = new Resolver();

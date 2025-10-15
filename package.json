@@ -41,7 +41,7 @@
     "prepack": "pnpm build && clean-package",
     "postpack": "clean-package restore"
   },
-  "dependencies": {
+  "peerDependencies": {
     "rxjs": "^7.8.2"
   },
   "devDependencies": {

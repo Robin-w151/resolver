@@ -201,6 +201,8 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
    * @template TWithLoadingState - Controls whether loading state is emitted before final results
    *
    * @param options - Configuration options for the resolution process:
+   *   - `globalArgs`: **Temporary override** for global arguments passed to all tasks during this resolution.
+   *     This does not mutate the instance's globalArgs and only affects this specific resolution call.
    *   - `withLoadingState`: Whether to emit a loading state before final results (default: false)
    *   - `maxIterations`: Maximum number of resolution iterations to prevent infinite loops (default: 100)
    *
@@ -238,6 +240,13 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
    *   console.log('Final result:', result);
    * });
    *
+   * // Temporary globalArgs override (does not mutate instance)
+   * resolver.resolve({ globalArgs: { apiKey: 'temp-key', baseUrl: 'https://temp.api.com' } })
+   *   .subscribe(result => {
+   *     console.log('Tasks executed with temporary global args:', result.globalArgs);
+   *     // Instance's globalArgs remains unchanged
+   *   });
+   *
    * // Custom max iterations
    * resolver.resolve({ maxIterations: 50 }).subscribe(result => {
    *   // Handle result
@@ -245,17 +254,19 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
    * ```
    */
   resolve<TWithLoadingState extends boolean = false>(options?: {
+    globalArgs?: TGlobalArgs;
     withLoadingState?: TWithLoadingState;
     maxIterations?: number;
   }): TWithLoadingState extends true
     ? ResolverResultWithLoadingState<TGlobalArgs, TResult>
     : ResolverResult<TGlobalArgs, TResult> {
     const { withLoadingState = false, maxIterations = RESOLVER_MAX_ITERATIONS } = options ?? {};
+    const effectiveGlobalArgs = !!options && 'globalArgs' in options ? options.globalArgs : this.globalArgs;
     const resolvedTasks = new Map<string, Promise<[string, TaskResult<unknown>]>>();
     const destroy = new Subject<void>();
 
     if (this.tasks.size === 0) {
-      return of({ globalArgs: this.globalArgs, tasks: {} as TResult, hasErrors: undefined }) as never;
+      return of({ globalArgs: effectiveGlobalArgs, tasks: {} as TResult, hasErrors: undefined }) as never;
     }
 
     let count = 1;
@@ -267,7 +278,7 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
       const tasks = this.findTasks(resolvedTasks);
       tasks.forEach((task) => {
         if (task.producers.length === 0) {
-          const result = this.executeTask(task, {}, this.globalArgs, destroy);
+          const result = this.executeTask(task, {}, effectiveGlobalArgs, destroy);
           resolvedTasks.set(task.id, result);
         } else {
           const result = firstValueFrom(
@@ -275,7 +286,7 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
               task.producers.map((producer) => resolvedTasks.get(producer) as Promise<[string, TaskResult<unknown>]>),
             ).pipe(
               map((args) => args.reduce((acc, [id, result]) => ({ ...acc, [id]: result }), {})),
-              switchMap((args) => this.executeTask(task, args, this.globalArgs, destroy)),
+              switchMap((args) => this.executeTask(task, args, effectiveGlobalArgs, destroy)),
             ),
           );
           resolvedTasks.set(task.id, result);
@@ -285,7 +296,7 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
 
     const resultWithState = forkJoin(Array.from(resolvedTasks.values())).pipe(
       map((data) => ({
-        globalArgs: this.globalArgs,
+        globalArgs: effectiveGlobalArgs,
         tasks: data.reduce(
           (acc, [id, result]) => ({ ...acc, [id]: result }),
           {} as Record<string, TaskResult<unknown>>,

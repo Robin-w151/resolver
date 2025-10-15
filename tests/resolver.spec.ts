@@ -261,7 +261,7 @@ describe('Resolver', () => {
     });
   });
 
-  test('task graph with global args', async () => {
+  test('with global args', async () => {
     const resolver = new Resolver('Hello').register({ id: 'A', fn: (_args, globalArgs) => `${globalArgs}, World!` });
 
     const result = await lastValueFrom(resolver.resolve());
@@ -275,7 +275,39 @@ describe('Resolver', () => {
     expect(result2).toEqual({ globalArgs: 'Goodbye', tasks: { A: { data: 'Goodbye, World!' } } });
   });
 
-  test('task graph with too many iterations', async () => {
+  test('with temporary global args', async () => {
+    const resolver = new Resolver('Hello').register({ id: 'A', fn: (_args, globalArgs) => `${globalArgs}, World!` });
+
+    const result = await lastValueFrom(resolver.resolve({ globalArgs: 'Goodbye' }));
+
+    expect(result).toEqual({ globalArgs: 'Goodbye', tasks: { A: { data: 'Goodbye, World!' } } });
+
+    const result2 = await lastValueFrom(resolver.resolve({ globalArgs: 'Nighty Night' }));
+
+    expect(result2).toEqual({ globalArgs: 'Nighty Night', tasks: { A: { data: 'Nighty Night, World!' } } });
+  });
+
+  test('with temporary global args does not mutate instance', async () => {
+    const resolver = new Resolver('Hello').register({ id: 'A', fn: (_args, globalArgs) => `${globalArgs}, World!` });
+
+    await lastValueFrom(resolver.resolve({ globalArgs: 'Goodbye' }));
+    const result = await lastValueFrom(resolver.resolve());
+
+    expect(result).toEqual({ globalArgs: 'Hello', tasks: { A: { data: 'Hello, World!' } } });
+  });
+
+  test('with temporary global args = undefined does override', async () => {
+    const resolver = new Resolver<string | undefined>('Hello').register({
+      id: 'A',
+      fn: (_args, globalArgs) => `${globalArgs}, World!`,
+    });
+
+    const result = await lastValueFrom(resolver.resolve({ globalArgs: undefined }));
+
+    expect(result).toEqual({ globalArgs: undefined, tasks: { A: { data: 'undefined, World!' } } });
+  });
+
+  test('resolve with too many iterations', async () => {
     let resolver: any = new Resolver();
     for (let i = 0; i < RESOLVER_MAX_ITERATIONS + 1; i++) {
       resolver = resolver.register({ id: `${i}`, fn: () => i }, i > 0 ? [`${i - 1}`] : []);
@@ -284,7 +316,7 @@ describe('Resolver', () => {
     await expect(lastValueFrom(resolver.resolve())).rejects.toThrowError('Max iterations reached');
   });
 
-  test('task graph with explicit loading state', async () => {
+  test('resolve with explicit loading state', async () => {
     const resolver = new Resolver().register({ id: 'A', fn: () => 1 }).register({ id: 'B', fn: () => 2 });
 
     const result = await firstValueFrom(resolver.resolve({ withLoadingState: true }));
@@ -293,7 +325,7 @@ describe('Resolver', () => {
     expect(result).toEqual({ loading: true });
   });
 
-  test('task graph with default behavior (no loading state)', async () => {
+  test('resolve with default behavior (no loading state)', async () => {
     const resolver = new Resolver().register({ id: 'A', fn: () => 1 }).register({ id: 'B', fn: () => 2 });
 
     const result = await firstValueFrom(resolver.resolve());

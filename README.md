@@ -261,9 +261,42 @@ The `resolve()` method accepts an optional options parameter to control its beha
 
 ```typescript
 interface ResolveOptions {
+  globalArgs?: TGlobalArgs;
   withLoadingState?: boolean;
   maxIterations?: number;
 }
+```
+
+### `globalArgs` (optional)
+
+Provides a **temporary override** for global arguments passed to all tasks during this specific resolution. This does not mutate the instance's globalArgs and only affects this resolution call.
+
+- **Purpose**: Allows different global arguments for specific resolutions without changing the resolver instance
+- **Behavior**: Overrides the instance's globalArgs for this resolution only
+- **Type**: Same type as the resolver's global arguments (`TGlobalArgs`)
+
+```typescript
+const resolver = new Resolver({ apiKey: 'default-key', baseUrl: 'https://api.example.com' }).register({
+  id: 'fetchData',
+  fn: (_args, globalArgs) => {
+    return fetch(`${globalArgs.baseUrl}/data`, {
+      headers: { Authorization: `Bearer ${globalArgs.apiKey}` },
+    });
+  },
+});
+
+// Use temporary global args for this resolution
+const result = await lastValueFrom(
+  resolver.resolve({
+    globalArgs: { apiKey: 'temp-key', baseUrl: 'https://temp.api.com' },
+  }),
+);
+
+console.log(result.globalArgs); // { apiKey: 'temp-key', baseUrl: 'https://temp.api.com' }
+
+// Next resolution uses the original instance globalArgs
+const result2 = await lastValueFrom(resolver.resolve());
+console.log(result2.globalArgs); // { apiKey: 'default-key', baseUrl: 'https://api.example.com' }
 ```
 
 ### `withLoadingState` (default: `false`)

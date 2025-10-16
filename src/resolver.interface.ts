@@ -10,7 +10,7 @@ export type ResolverType<
 > = Resolver<
   TGlobalArgs,
   TResult & {
-    [K in TId]: TaskResult<RxjsAwaited<TTaskResult>>;
+    [K in TId]: TaskResult<TTaskResult>;
   }
 >;
 

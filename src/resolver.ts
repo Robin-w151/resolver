@@ -386,10 +386,10 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
    * @param globalArgs - Global arguments to pass to the task
    * @returns Promise resolving to [taskId, result]
    */
-  private executeTask<TGlobalArgs = unknown>(
+  private executeTask(
     task: TaskInfo<string>,
     args: Record<string, TaskResult<unknown>>,
-    globalArgs: TGlobalArgs,
+    globalArgs: TGlobalArgs | undefined,
     destroy: Subject<void>,
   ): Promise<[string, TaskResult<unknown>]> {
     return new Promise((resolve) => {

@@ -17,11 +17,10 @@ export type ResolverType<
 export type ResolverResult<TGlobalArgs, TResult> = Observable<{
   globalArgs: TGlobalArgs;
   tasks: TResult;
-  hasErrors?: boolean;
 }>;
 
 export type ResolverResultWithLoadingState<TGlobalArgs, TResult> = Observable<
-  ({ globalArgs: TGlobalArgs; tasks: TResult } | { loading: true }) & { hasErrors?: boolean }
+  { globalArgs: TGlobalArgs; tasks: TResult } | { loading: true }
 >;
 
 // Task

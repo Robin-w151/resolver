@@ -1,5 +1,5 @@
 import { delay, finalize, lastValueFrom, of, throwError } from 'rxjs';
-import { isSuccess, Resolver } from '../src/resolver.js';
+import { hasNoErrors, isSuccess, Resolver } from '../src/resolver.js';
 
 const logTask = (message: string) => {
   console.log(`${new Date().toISOString()}: ${message}`);
@@ -27,9 +27,10 @@ const resolver = new Resolver({ base: 0 } as const)
   .register(
     {
       id: 'C',
-      fn: ({ A, B }) => {
+      fn: (args) => {
         logTask('C start');
-        if (isSuccess(A) && isSuccess(B)) {
+        if (hasNoErrors(args)) {
+          const { A, B } = args;
           return of(A.data + B.data).pipe(finalize(() => logTask('C done')));
         }
 

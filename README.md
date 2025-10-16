@@ -161,42 +161,6 @@ Tasks can return either successful data or errors. The resolver handles both cas
 - Successful tasks return `{ data: TResult }`
 - Failed tasks return `{ error: unknown }`
 
-## Status Attributes
-
-The resolver provides status attributes to help track resolution progress and detect errors:
-
-- **`loading`**: Emitted as the first value (`{ loading: true }`) in the observable stream, indicating that resolution is in progress
-- **`hasErrors`**: Included in the final result as either `true` (if any task failed) or `undefined` (if all tasks succeeded)
-
-```typescript
-import { lastValueFrom, of } from 'rxjs';
-import { Resolver, isLoading } from '@robinw151/resolver';
-
-const resolver = new Resolver()
-  .register({
-    id: 'task1',
-    fn: () => of('Hello'),
-  })
-  .register({
-    id: 'task2',
-    fn: () => of('World'),
-  });
-
-// Subscribe to track loading state and errors
-resolver.resolve().subscribe((result) => {
-  if (isLoading(result)) {
-    console.log('Resolution in progress...');
-  } else {
-    if (result.hasErrors) {
-      console.log('Some tasks failed');
-    } else {
-      console.log('All tasks completed successfully');
-    }
-    console.log('Final result:', result);
-  }
-});
-```
-
 ## Global Arguments
 
 The resolver supports global arguments that are passed to all task functions during execution. This is useful for sharing configuration, API keys, or other context across all tasks.
@@ -379,6 +343,25 @@ import { isLoading } from '@robinw151/resolver';
 
 if (isLoading(resolverResult)) {
   console.log('Resolution is still in progress...');
+}
+```
+
+### `hasNoErrors(result)`
+
+Type guard that checks if all task results in a resolver result contain successful data (no errors). This function performs a runtime check to determine if every task in the result object has completed successfully.
+
+```typescript
+import { hasNoErrors } from '@robinw151/resolver';
+
+const result = await lastValueFrom(resolver.resolve());
+
+if (hasNoErrors(result.tasks)) {
+  // All tasks succeeded - safe to access data
+  console.log('User:', result.tasks.user.data.name);
+  console.log('Posts count:', result.tasks.posts.data.length);
+} else {
+  // Some tasks failed - handle errors appropriately
+  console.log('Some tasks failed during resolution');
 }
 ```
 

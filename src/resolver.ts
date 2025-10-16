@@ -213,7 +213,6 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
    *   The final result contains:
    *   - `globalArgs`: The global arguments passed to all tasks
    *   - `tasks`: An object mapping task IDs to their results (success or error)
-   *   - `hasErrors`: Boolean indicating if any tasks failed (only present if true)
    *
    * @throws {Error} If max iterations are reached (indicates circular dependencies)
    *
@@ -231,7 +230,6 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
    *     console.log('Loading...');
    *   } else {
    *     console.log('Final result:', result);
-   *     console.log('Has errors:', result.hasErrors);
    *   }
    * });
    *
@@ -266,7 +264,7 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
     const destroy = new Subject<void>();
 
     if (this.tasks.size === 0) {
-      return of({ globalArgs: effectiveGlobalArgs, tasks: {} as TResult, hasErrors: undefined }) as never;
+      return of({ globalArgs: effectiveGlobalArgs, tasks: {} as TResult }) as never;
     }
 
     let count = 1;
@@ -301,12 +299,6 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
           (acc, [id, result]) => ({ ...acc, [id]: result }),
           {} as Record<string, TaskResult<unknown>>,
         ),
-      })),
-      map((result) => ({
-        ...result,
-        hasErrors:
-          Object.entries(result.tasks).some(([, value]) => !!value && typeof value === 'object' && isError(value)) ||
-          undefined,
       })),
       finalize(() => {
         destroy.next();
@@ -473,6 +465,48 @@ export function isError<TValue>(value: TaskResult<TValue>): value is { error: un
  */
 export function isLoading(
   value: RxjsAwaited<ResolverResultWithLoadingState<unknown, unknown>>,
-): value is { loading: true; hasErrors?: boolean } {
+): value is { loading: true } {
   return 'loading' in value && !!value.loading;
+}
+
+/**
+ * Type guard that checks if all task results in a resolver result contain successful data (no errors).
+ *
+ * This function performs a runtime check to determine if every task in the result object
+ * has completed successfully. It's useful for validating that all tasks resolved without
+ * errors before proceeding with dependent operations.
+ *
+ * @template TResult - The type of the result object containing task results
+ *
+ * @param result - The resolver result object containing task results to check
+ *
+ * @returns `true` if all task results contain data (no errors), `false` otherwise
+ *
+ * @example
+ * ```typescript
+ * import { lastValueFrom } from 'rxjs';
+ * import { Resolver, hasNoErrors } from '@robinw151/resolver';
+ *
+ * const resolver = new Resolver()
+ *   .register({ id: 'user', fn: () => ({ id: 1, name: 'John' }) })
+ *   .register({ id: 'posts', fn: () => [{ id: 1, title: 'Post 1' }] });
+ *
+ * const result = await lastValueFrom(resolver.resolve());
+ *
+ * if (hasNoErrors(result.tasks)) {
+ *   // All tasks succeeded - safe to access data
+ *   console.log('User:', result.tasks.user.data.name);
+ *   console.log('Posts count:', result.tasks.posts.data.length);
+ * } else {
+ *   // Some tasks failed - handle errors appropriately
+ *   console.log('Some tasks failed during resolution');
+ * }
+ * ```
+ */
+export function hasNoErrors<TResult extends Record<string, TaskResult<unknown>>>(
+  result: TResult,
+): result is TResult & {
+  [K in keyof TResult]: TResult[K] extends TaskResult<infer TData> ? { data: TData } : never;
+} {
+  return Object.values(result).every(isSuccess);
 }

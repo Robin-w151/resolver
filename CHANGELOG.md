@@ -1,5 +1,11 @@
 # @robinw151/resolver
 
+## 0.1.3
+
+### Patch Changes
+
+- 62c910f: use for-of instead of forEach for iterating over tasks
+
 ## 0.1.2
 
 ### Patch Changes

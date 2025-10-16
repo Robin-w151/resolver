@@ -276,7 +276,7 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
       }
 
       const tasks = this.findTasks(resolvedTasks);
-      tasks.forEach((task) => {
+      for (const task of tasks) {
         if (task.producers.length === 0) {
           const result = this.executeTask(task, {}, effectiveGlobalArgs, destroy);
           resolvedTasks.set(task.id, result);
@@ -291,7 +291,7 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
           );
           resolvedTasks.set(task.id, result);
         }
-      });
+      }
     }
 
     const resultWithState = forkJoin(Array.from(resolvedTasks.values())).pipe(

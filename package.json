@@ -5,20 +5,21 @@
   "author": "Robin Wunderbaldinger",
   "license": "MIT",
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "require": "./dist/index.cjs",
       "import": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },
   "files": [
-    "dist/**/*.js",
-    "dist/**/*.d.ts",
-    "dist/**/*.d.ts.map",
+    "dist/**/*.{js,cjs}",
+    "dist/**/*.d.{ts,cts}",
+    "dist/**/*.map",
     "README.md",
     "LICENSE"
   ],
@@ -34,7 +35,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsc --project tsconfig.json --rootDir src",
+    "build": "tsup src/index.ts --format esm,cjs --dts --sourcemap",
     "lint": "prettier --check src/**/*.ts && eslint src/**/*.ts",
     "test": "vitest run && tsc --noEmit --project tests/tsconfig.json",
     "check": "pnpm lint && pnpm test",
@@ -53,6 +54,7 @@
     "eslint": "9.37.0",
     "eslint-config-prettier": "10.1.8",
     "prettier": "3.6.2",
+    "tsup": "8.5.0",
     "typescript": "5.9.3",
     "typescript-eslint": "8.46.1",
     "vitest": "3.2.4"

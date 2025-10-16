@@ -40,7 +40,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --sourcemap",
+    "build": "tsup",
     "lint": "prettier --check **/*.ts && eslint --no-warn-ignored **/*.ts",
     "test": "vitest run && tsc --noEmit --project tests/tsconfig.json",
     "check": "pnpm lint && pnpm test",

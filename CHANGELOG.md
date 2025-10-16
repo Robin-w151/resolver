@@ -1,5 +1,11 @@
 # @robinw151/resolver
 
+## 0.2.1
+
+### Patch Changes
+
+- 1caf0eb: adjust tsup configuration
+
 ## 0.2.0
 
 ### Minor Changes

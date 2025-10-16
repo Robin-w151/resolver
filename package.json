@@ -40,7 +40,8 @@
     "test": "vitest run && tsc --noEmit --project tests/tsconfig.json",
     "check": "pnpm lint && pnpm test",
     "prepack": "pnpm build && clean-package",
-    "postpack": "clean-package restore"
+    "postpack": "clean-package restore",
+    "prepare": "husky"
   },
   "peerDependencies": {
     "rxjs": "^7.8.2"
@@ -53,6 +54,7 @@
     "clean-package": "2.2.0",
     "eslint": "9.37.0",
     "eslint-config-prettier": "10.1.8",
+    "husky": "9.1.7",
     "prettier": "3.6.2",
     "tsup": "8.5.0",
     "typescript": "5.9.3",

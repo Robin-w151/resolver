@@ -49,7 +49,6 @@ const resolver = new Resolver()
 
 const result = resolver.resolve({ withLoadingState: true });
 
-/* eslint-disable no-undef */
 result
   .pipe(
     tap((result) => {

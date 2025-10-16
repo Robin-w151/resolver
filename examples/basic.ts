@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 import { delay, finalize, lastValueFrom, of, throwError } from 'rxjs';
 import { isSuccess, Resolver } from '../src/resolver.js';
 

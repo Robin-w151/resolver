@@ -308,6 +308,7 @@ describe('Resolver', () => {
   });
 
   test('resolve with too many iterations', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let resolver: any = new Resolver();
     for (let i = 0; i < RESOLVER_MAX_ITERATIONS + 1; i++) {
       resolver = resolver.register({ id: `${i}`, fn: () => i }, i > 0 ? [`${i - 1}`] : []);

@@ -20,5 +20,4 @@ const resolver = new Resolver()
 
 const result = await lastValueFrom(resolver.resolve());
 
-/* eslint-disable no-undef */
 console.log(result);

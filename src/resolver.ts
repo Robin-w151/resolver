@@ -384,6 +384,7 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
    * @param task - The task to execute
    * @param args - Resolved dependencies for the task
    * @param globalArgs - Global arguments to pass to the task
+   * @param destroy - Subject to notify when a running task should be cancelled
    * @returns Promise resolving to [taskId, result]
    */
   private executeTask(

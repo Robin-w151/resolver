@@ -1,5 +1,13 @@
 # @robinw151/resolver
 
+## 0.2.0
+
+### Minor Changes
+
+BREAKING:
+
+- 70e200a: provide hasNoErrors utility function and remove hasErrors status flag
+
 ## 0.1.3
 
 ### Patch Changes

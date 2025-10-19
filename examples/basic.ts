@@ -1,5 +1,5 @@
 import { delay, finalize, lastValueFrom, of, throwError } from 'rxjs';
-import { hasNoErrors, isSuccess, Resolver } from '../src/resolver.js';
+import { hasNoErrors, isSuccess, Resolver } from '../src/resolver';
 
 const logTask = (message: string) => {
   console.log(`${new Date().toISOString()}: ${message}`);

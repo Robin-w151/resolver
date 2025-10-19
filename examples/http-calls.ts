@@ -1,5 +1,5 @@
 import { tap } from 'rxjs';
-import { isError, isLoading, Resolver } from '../src/resolver.js';
+import { isError, isLoading, Resolver } from '../src/resolver';
 
 interface TestObject {
   id: string;

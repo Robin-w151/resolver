@@ -1,7 +1,7 @@
 import { delay, finalize, of, tap } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import type { RxjsAwaited } from '../src/resolver.interface.js';
-import { Resolver } from '../src/resolver.js';
+import type { RxjsAwaited } from '../src/resolver.interface';
+import { Resolver } from '../src/resolver';
 
 describe('Resolver timers', () => {
   beforeEach(() => {

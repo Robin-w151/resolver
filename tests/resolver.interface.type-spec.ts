@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
-import type { ResolverType, RxjsAwaited, TaskDependencies, TaskResult } from '../src/resolver.interface.js';
-import { Resolver } from '../src/resolver.js';
-import type { Equal, Expect } from './type-test-util.js';
+import type { ResolverType, RxjsAwaited, TaskDependencies, TaskResult } from '../src/resolver.interface';
+import { Resolver } from '../src/resolver';
+import type { Equal, Expect } from './type-test-util';
 
 // ResolverType
 type resolverTypeTests = [

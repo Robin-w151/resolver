@@ -1,7 +1,7 @@
 import { delay, finalize, firstValueFrom, lastValueFrom, of, throwError } from 'rxjs';
 import { describe, expect, test, vi } from 'vitest';
-import type { TaskResult } from '../src/resolver.interface.js';
-import { isError, isLoading, isSuccess, Resolver, RESOLVER_MAX_ITERATIONS } from '../src/resolver.js';
+import type { TaskResult } from '../src/resolver.interface';
+import { isError, isLoading, isSuccess, Resolver, RESOLVER_MAX_ITERATIONS } from '../src/resolver';
 
 describe('Resolver', () => {
   test('empty task graph', async () => {

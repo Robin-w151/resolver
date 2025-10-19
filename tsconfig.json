@@ -1,28 +1,27 @@
 {
   "compilerOptions": {
-    // File Layout
-    "outDir": "./dist",
+    // Emit Options
+    "noEmit": true,
 
-    // Environment Settings
-    "module": "nodenext",
+    // Environment Options
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "target": "esnext",
     "lib": ["es2023"],
     "types": ["node"],
 
-    // Other Outputs
-    "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
-
-    // Stricter Typechecking Options
-    "noUncheckedIndexedAccess": true,
-
-    // Recommended Options
+    // Typechecking Options
     "strict": true,
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
+    "noFallthroughCasesInSwitch": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
     "noUncheckedSideEffectImports": true,
-    "moduleDetection": "force",
+
+    // Interop Options
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+
+    // Other Options
     "skipLibCheck": true
   },
   "include": ["src/**/*.ts"]

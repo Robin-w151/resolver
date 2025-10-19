@@ -25,7 +25,7 @@ import type {
   TaskId,
   TaskInfo,
   TaskResult,
-} from './resolver.interface.js';
+} from './resolver.interface';
 
 export const RESOLVER_MAX_ITERATIONS = 100;
 

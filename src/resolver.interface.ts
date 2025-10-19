@@ -1,5 +1,5 @@
 import type { Observable } from 'rxjs';
-import type { Resolver } from './resolver.js';
+import type { Resolver } from './resolver';
 
 // Resolver
 export type ResolverType<

@@ -1,5 +1,5 @@
 import { lastValueFrom, throwError } from 'rxjs';
-import { isSuccess, Resolver } from '../src/resolver.js';
+import { isSuccess, Resolver } from '../src/resolver';
 
 const resolver = new Resolver()
   .register({ id: 'A', fn: () => 1 })

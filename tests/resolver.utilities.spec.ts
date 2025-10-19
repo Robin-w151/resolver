@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import type { TaskResult } from '../src/resolver.interface.js';
-import { hasNoErrors, isError, isSuccess } from '../src/resolver.js';
+import type { TaskResult } from '../src/resolver.interface';
+import { hasNoErrors, isError, isSuccess } from '../src/resolver';
 
 describe('Resolver utilities', () => {
   test.each([

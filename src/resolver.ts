@@ -2,7 +2,6 @@ import {
   catchError,
   concat,
   finalize,
-  firstValueFrom,
   forkJoin,
   from,
   map,
@@ -13,7 +12,6 @@ import {
   take,
   takeUntil,
   tap,
-  throwError,
 } from 'rxjs';
 import type {
   ResolverResult,
@@ -25,9 +23,8 @@ import type {
   TaskId,
   TaskInfo,
   TaskResult,
+  WithResolvers,
 } from './resolver.interface';
-
-export const RESOLVER_MAX_ITERATIONS = 100;
 
 /**
  * A dependency-aware task resolver that executes tasks in the correct order based on their dependencies.
@@ -204,7 +201,6 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
    *   - `globalArgs`: **Temporary override** for global arguments passed to all tasks during this resolution.
    *     This does not mutate the instance's globalArgs and only affects this specific resolution call.
    *   - `withLoadingState`: Whether to emit a loading state before final results (default: false)
-   *   - `maxIterations`: Maximum number of resolution iterations to prevent infinite loops (default: 100)
    *
    * @returns An Observable that emits:
    *   - If `withLoadingState` is true: First emits `{ loading: true }`, then the final result
@@ -214,8 +210,6 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
    *   - `globalArgs`: The global arguments passed to all tasks
    *   - `tasks`: An object mapping task IDs to their results (success or error)
    *
-   * @throws {Error} If max iterations are reached (indicates circular dependencies)
-   *
    * @example
    * ```typescript
    * const resolver = new Resolver();
@@ -224,18 +218,18 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
    *   .register({ id: 'user', fn: () => fetchUser() })
    *   .register({ id: 'posts', fn: ({ user }) => fetchPosts(user.data.id) }, ['user']);
    *
-   * // With loading state (default)
+   * // Without loading state (default)
    * resolver.resolve().subscribe(result => {
+   *   console.log('Final result:', result);
+   * });
+   *
+   * // With loading state
+   * resolver.resolve({ withLoadingState: true }).subscribe(result => {
    *   if ('loading' in result) {
    *     console.log('Loading...');
    *   } else {
    *     console.log('Final result:', result);
    *   }
-   * });
-   *
-   * // Without loading state
-   * resolver.resolve({ withLoadingState: false }).subscribe(result => {
-   *   console.log('Final result:', result);
    * });
    *
    * // Temporary globalArgs override (does not mutate instance)
@@ -244,55 +238,59 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
    *     console.log('Tasks executed with temporary global args:', result.globalArgs);
    *     // Instance's globalArgs remains unchanged
    *   });
-   *
-   * // Custom max iterations
-   * resolver.resolve({ maxIterations: 50 }).subscribe(result => {
-   *   // Handle result
-   * });
    * ```
    */
   resolve<TWithLoadingState extends boolean = false>(options?: {
     globalArgs?: TGlobalArgs;
     withLoadingState?: TWithLoadingState;
-    maxIterations?: number;
   }): TWithLoadingState extends true
     ? ResolverResultWithLoadingState<TGlobalArgs, TResult>
     : ResolverResult<TGlobalArgs, TResult> {
-    const { withLoadingState = false, maxIterations = RESOLVER_MAX_ITERATIONS } = options ?? {};
+    const { withLoadingState = false } = options ?? {};
     const effectiveGlobalArgs = !!options && 'globalArgs' in options ? options.globalArgs : this.globalArgs;
-    const resolvedTasks = new Map<string, Promise<[string, TaskResult<unknown>]>>();
+    const taskResults = new Map<string, WithResolvers<readonly [string, TaskResult<unknown>]>>();
     const destroy = new Subject<void>();
 
     if (this.tasks.size === 0) {
       return of({ globalArgs: effectiveGlobalArgs, tasks: {} as TResult }) as never;
     }
 
-    let count = 1;
-    while (resolvedTasks.size < this.tasks.size) {
-      if (count++ > maxIterations) {
-        return throwError(() => new Error('Max iterations reached'));
-      }
-
-      const tasks = this.findTasks(resolvedTasks);
-      for (const task of tasks) {
-        if (task.producers.length === 0) {
-          const result = this.executeTask(task, {}, effectiveGlobalArgs, destroy);
-          resolvedTasks.set(task.id, result);
-        } else {
-          const result = firstValueFrom(
-            forkJoin(
-              task.producers.map((producer) => resolvedTasks.get(producer) as Promise<[string, TaskResult<unknown>]>),
-            ).pipe(
-              map((args) => args.reduce((acc, [id, result]) => ({ ...acc, [id]: result }), {})),
-              switchMap((args) => this.executeTask(task, args, effectiveGlobalArgs, destroy)),
-            ),
-          );
-          resolvedTasks.set(task.id, result);
-        }
-      }
+    for (const task of this.tasks.values()) {
+      taskResults.set(task.id, this.withResolvers<readonly [string, TaskResult<unknown>]>());
     }
 
-    const resultWithState = forkJoin(Array.from(resolvedTasks.values())).pipe(
+    for (const task of this.tasks.values()) {
+      const taskResultPromise = taskResults.get(task.id);
+      if (!taskResultPromise) {
+        throw new Error(`Task result promise not found for task ${task.id}`);
+      }
+
+      let result: Observable<readonly [string, TaskResult<unknown>]>;
+      if (task.producers.length === 0) {
+        result = this.executeTask(task, {}, effectiveGlobalArgs);
+      } else {
+        result = forkJoin(
+          task.producers.map(
+            (producer) => taskResults.get(producer)?.promise as Promise<readonly [string, TaskResult<unknown>]>,
+          ),
+        ).pipe(
+          map((args) => args.reduce((acc, [id, result]) => ({ ...acc, [id]: result }), {})),
+          switchMap((args) => this.executeTask(task, args, effectiveGlobalArgs)),
+        );
+      }
+
+      result
+        .pipe(
+          tap((result) => {
+            taskResultPromise.resolve(result);
+          }),
+          take(1),
+          takeUntil(destroy),
+        )
+        .subscribe();
+    }
+
+    const resultWithState = forkJoin(Array.from(taskResults.values()).map((taskResult) => taskResult.promise)).pipe(
       map((data) => ({
         globalArgs: effectiveGlobalArgs,
         tasks: data.reduce(
@@ -359,48 +357,28 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
   }
 
   /**
-   * Finds tasks that are ready to execute (all dependencies resolved).
-   *
-   * @param resolvedTasks - Map of already resolved task IDs
-   * @returns Array of tasks ready for execution
-   */
-  private findTasks(resolvedTasks: Map<string, Promise<[string, TaskResult<unknown>]>>): Array<TaskInfo<string>> {
-    return Array.from(this.tasks.values()).filter((task) => {
-      return !resolvedTasks.has(task.id) && task.producers.every((producer) => resolvedTasks.has(producer));
-    });
-  }
-
-  /**
-   * Executes a single task and returns its result wrapped in a Promise.
+   * Executes a task and wraps its result in an Observable.
    *
    * @param task - The task to execute
-   * @param args - Resolved dependencies for the task
-   * @param globalArgs - Global arguments to pass to the task
-   * @param destroy - Subject to notify when a running task should be cancelled
-   * @returns Promise resolving to [taskId, result]
+   * @param args - The resolved task arguments
+   * @param globalArgs - The global arguments to pass to the task
+   * @returns An Observable that emits [taskId, result] where result contains either data or error
    */
   private executeTask(
     task: TaskInfo<string>,
     args: Record<string, TaskResult<unknown>>,
     globalArgs: TGlobalArgs | undefined,
-    destroy: Subject<void>,
-  ): Promise<[string, TaskResult<unknown>]> {
-    return new Promise((resolve) => {
-      try {
-        const taskResult = task.fn(args, globalArgs);
-        from(this.isPromiseOrObservable(taskResult) ? taskResult : of(taskResult))
-          .pipe(
-            map((data) => ({ data })),
-            catchError((error) => of({ error })),
-            take(1),
-            tap((data) => resolve([task.id, data])),
-            takeUntil(destroy),
-          )
-          .subscribe();
-      } catch (error) {
-        resolve([task.id, { error }] as const);
-      }
-    });
+  ): Observable<readonly [string, TaskResult<unknown>]> {
+    try {
+      const taskResult = task.fn(args, globalArgs);
+      return from(this.isPromiseOrObservable(taskResult) ? taskResult : of(taskResult)).pipe(
+        map((data) => ({ data })),
+        catchError((error) => of({ error })),
+        map((data) => [task.id, data] as const),
+      );
+    } catch (error) {
+      return of([task.id, { error }] as const);
+    }
   }
 
   /**
@@ -413,6 +391,22 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
     value: TValue | Promise<TValue> | Observable<TValue>,
   ): value is Promise<TValue> | Observable<TValue> {
     return typeof value === 'object' && value !== null && ('then' in value || 'subscribe' in value);
+  }
+
+  /**
+   * Creates a promise with its resolve and reject functions exposed.
+   *
+   * @returns An object containing the promise, resolve, and reject functions
+   */
+  private withResolvers<T>(): WithResolvers<T> {
+    let resolve: (value: T) => void;
+    let reject: (error: unknown) => void;
+    const promise = new Promise<T>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+
+    return { promise, resolve: resolve!, reject: reject! };
   }
 }
 

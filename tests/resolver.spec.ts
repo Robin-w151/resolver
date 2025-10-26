@@ -1,7 +1,7 @@
 import { delay, finalize, firstValueFrom, lastValueFrom, of, throwError } from 'rxjs';
 import { describe, expect, test, vi } from 'vitest';
+import { isError, isLoading, isSuccess, Resolver } from '../src/resolver';
 import type { TaskResult } from '../src/resolver.interface';
-import { isError, isLoading, isSuccess, Resolver, RESOLVER_MAX_ITERATIONS } from '../src/resolver';
 
 describe('Resolver', () => {
   test('empty task graph', async () => {
@@ -302,16 +302,6 @@ describe('Resolver', () => {
     const result = await lastValueFrom(resolver.resolve({ globalArgs: undefined }));
 
     expect(result).toEqual({ globalArgs: undefined, tasks: { A: { data: 'undefined, World!' } } });
-  });
-
-  test('resolve with too many iterations', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let resolver: any = new Resolver();
-    for (let i = 0; i < RESOLVER_MAX_ITERATIONS + 1; i++) {
-      resolver = resolver.register({ id: `${i}`, fn: () => i }, i > 0 ? [`${i - 1}`] : []);
-    }
-
-    await expect(lastValueFrom(resolver.resolve())).rejects.toThrowError('Max iterations reached');
   });
 
   test('resolve with explicit loading state', async () => {

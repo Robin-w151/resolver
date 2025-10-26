@@ -262,20 +262,13 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
       }
 
       for (const task of this.tasks.values()) {
-        const taskResultPromise = taskResults.get(task.id);
-        if (!taskResultPromise) {
-          throw new Error(`Task result promise not found for task ${task.id}`);
-        }
+        const taskResultPromise = taskResults.get(task.id)!;
 
         let result: Observable<readonly [string, TaskResult<unknown>]>;
         if (task.producers.length === 0) {
           result = this.executeTask(task, {}, effectiveGlobalArgs);
         } else {
-          result = forkJoin(
-            task.producers.map(
-              (producer) => taskResults.get(producer)?.promise as Promise<readonly [string, TaskResult<unknown>]>,
-            ),
-          ).pipe(
+          result = forkJoin(task.producers.map((producer) => taskResults.get(producer)!.promise)).pipe(
             map((args) => args.reduce((acc, [id, result]) => ({ ...acc, [id]: result }), {})),
             switchMap((args) => this.executeTask(task, args, effectiveGlobalArgs)),
           );

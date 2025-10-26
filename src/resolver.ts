@@ -1,6 +1,7 @@
 import {
   catchError,
   concat,
+  defer,
   finalize,
   forkJoin,
   from,
@@ -246,65 +247,67 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
   }): TWithLoadingState extends true
     ? ResolverResultWithLoadingState<TGlobalArgs, TResult>
     : ResolverResult<TGlobalArgs, TResult> {
-    const { withLoadingState = false } = options ?? {};
-    const effectiveGlobalArgs = !!options && 'globalArgs' in options ? options.globalArgs : this.globalArgs;
-    const taskResults = new Map<string, WithResolvers<readonly [string, TaskResult<unknown>]>>();
-    const destroy = new Subject<void>();
+    return defer(() => {
+      const { withLoadingState = false } = options ?? {};
+      const effectiveGlobalArgs = !!options && 'globalArgs' in options ? options.globalArgs : this.globalArgs;
+      const taskResults = new Map<string, WithResolvers<readonly [string, TaskResult<unknown>]>>();
+      const destroy = new Subject<void>();
 
-    if (this.tasks.size === 0) {
-      return of({ globalArgs: effectiveGlobalArgs, tasks: {} as TResult }) as never;
-    }
-
-    for (const task of this.tasks.values()) {
-      taskResults.set(task.id, this.withResolvers<readonly [string, TaskResult<unknown>]>());
-    }
-
-    for (const task of this.tasks.values()) {
-      const taskResultPromise = taskResults.get(task.id);
-      if (!taskResultPromise) {
-        throw new Error(`Task result promise not found for task ${task.id}`);
+      if (this.tasks.size === 0) {
+        return of({ globalArgs: effectiveGlobalArgs, tasks: {} as TResult }) as never;
       }
 
-      let result: Observable<readonly [string, TaskResult<unknown>]>;
-      if (task.producers.length === 0) {
-        result = this.executeTask(task, {}, effectiveGlobalArgs);
-      } else {
-        result = forkJoin(
-          task.producers.map(
-            (producer) => taskResults.get(producer)?.promise as Promise<readonly [string, TaskResult<unknown>]>,
+      for (const task of this.tasks.values()) {
+        taskResults.set(task.id, this.withResolvers<readonly [string, TaskResult<unknown>]>());
+      }
+
+      for (const task of this.tasks.values()) {
+        const taskResultPromise = taskResults.get(task.id);
+        if (!taskResultPromise) {
+          throw new Error(`Task result promise not found for task ${task.id}`);
+        }
+
+        let result: Observable<readonly [string, TaskResult<unknown>]>;
+        if (task.producers.length === 0) {
+          result = this.executeTask(task, {}, effectiveGlobalArgs);
+        } else {
+          result = forkJoin(
+            task.producers.map(
+              (producer) => taskResults.get(producer)?.promise as Promise<readonly [string, TaskResult<unknown>]>,
+            ),
+          ).pipe(
+            map((args) => args.reduce((acc, [id, result]) => ({ ...acc, [id]: result }), {})),
+            switchMap((args) => this.executeTask(task, args, effectiveGlobalArgs)),
+          );
+        }
+
+        result
+          .pipe(
+            tap((result) => {
+              taskResultPromise.resolve(result);
+            }),
+            take(1),
+            takeUntil(destroy),
+          )
+          .subscribe();
+      }
+
+      const resultWithState = forkJoin(Array.from(taskResults.values()).map((taskResult) => taskResult.promise)).pipe(
+        map((data) => ({
+          globalArgs: effectiveGlobalArgs,
+          tasks: data.reduce(
+            (acc, [id, result]) => ({ ...acc, [id]: result }),
+            {} as Record<string, TaskResult<unknown>>,
           ),
-        ).pipe(
-          map((args) => args.reduce((acc, [id, result]) => ({ ...acc, [id]: result }), {})),
-          switchMap((args) => this.executeTask(task, args, effectiveGlobalArgs)),
-        );
-      }
+        })),
+        finalize(() => {
+          destroy.next();
+          destroy.complete();
+        }),
+      ) as ResolverResult<TGlobalArgs, TResult>;
 
-      result
-        .pipe(
-          tap((result) => {
-            taskResultPromise.resolve(result);
-          }),
-          take(1),
-          takeUntil(destroy),
-        )
-        .subscribe();
-    }
-
-    const resultWithState = forkJoin(Array.from(taskResults.values()).map((taskResult) => taskResult.promise)).pipe(
-      map((data) => ({
-        globalArgs: effectiveGlobalArgs,
-        tasks: data.reduce(
-          (acc, [id, result]) => ({ ...acc, [id]: result }),
-          {} as Record<string, TaskResult<unknown>>,
-        ),
-      })),
-      finalize(() => {
-        destroy.next();
-        destroy.complete();
-      }),
-    ) as ResolverResult<TGlobalArgs, TResult>;
-
-    return (withLoadingState ? concat(of({ loading: true } as const), resultWithState) : resultWithState) as never;
+      return (withLoadingState ? concat(of({ loading: true } as const), resultWithState) : resultWithState) as never;
+    });
   }
 
   /**

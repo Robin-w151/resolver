@@ -358,4 +358,15 @@ describe('Resolver', () => {
     expect(started).toHaveBeenCalledOnce();
     expect(finalizer).toHaveBeenCalledOnce();
   });
+
+  test('start resolving tasks after resolve observable is subscribed to', async () => {
+    const taskA = vi.fn(() => 1);
+    const resolver = new Resolver().register({ id: 'A', fn: taskA });
+
+    const result = resolver.resolve();
+    expect(taskA).not.toHaveBeenCalled();
+
+    await lastValueFrom(result);
+    expect(taskA).toHaveBeenCalledOnce();
+  });
 });

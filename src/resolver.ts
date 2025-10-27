@@ -5,6 +5,7 @@ import {
   finalize,
   forkJoin,
   from,
+  isObservable,
   map,
   type Observable,
   of,
@@ -25,7 +26,7 @@ import type {
   TaskInfo,
   TaskResult,
 } from './resolver.interface';
-import { withResolvers, type WithResolvers } from './shared/with-resolvers';
+import { isPromise, withResolvers, type WithResolvers } from './shared/promise-helper';
 
 /**
  * A dependency-aware task resolver that executes tasks in the correct order based on their dependencies.
@@ -378,7 +379,16 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
   ): Observable<readonly [string, TaskResult<unknown>]> {
     try {
       const taskResult = task.fn(args, globalArgs);
-      return from(this.isPromiseOrObservable(taskResult) ? taskResult : of(taskResult)).pipe(
+      let taskResultObservable: Observable<unknown>;
+      if (isPromise(taskResult)) {
+        taskResultObservable = from(taskResult);
+      } else if (isObservable(taskResult)) {
+        taskResultObservable = taskResult;
+      } else {
+        taskResultObservable = of(taskResult);
+      }
+
+      return taskResultObservable.pipe(
         map((data) => ({ data })),
         catchError((error) => of({ error })),
         map((data) => [task.id, data] as const),
@@ -386,18 +396,6 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
     } catch (error) {
       return of([task.id, { error }] as const);
     }
-  }
-
-  /**
-   * Type guard to check if a value is a Promise or Observable.
-   *
-   * @param value - The value to check
-   * @returns True if the value is a Promise or Observable
-   */
-  private isPromiseOrObservable<TValue>(
-    value: TValue | Promise<TValue> | Observable<TValue>,
-  ): value is Promise<TValue> | Observable<TValue> {
-    return typeof value === 'object' && value !== null && ('then' in value || 'subscribe' in value);
   }
 }
 

@@ -1,3 +1,5 @@
+import type { Observable } from 'rxjs';
+
 export interface WithResolvers<T> {
   promise: Promise<T>;
   resolve: (value: T) => void;
@@ -18,4 +20,14 @@ export function withResolvers<T>(): WithResolvers<T> {
   });
 
   return { promise, resolve: resolve!, reject: reject! };
+}
+
+/**
+ * Type guard to check if a value is a Promise.
+ *
+ * @param value - The value to check
+ * @returns True if the value is a Promise
+ */
+export function isPromise<TValue>(value: TValue | Promise<TValue> | Observable<TValue>): value is Promise<TValue> {
+  return typeof value === 'object' && value !== null && 'then' in value && typeof value.then === 'function';
 }

@@ -47,10 +47,3 @@ export type TaskResult<TResult> = { data: TResult } | { error: unknown };
 
 // Rxjs
 export type RxjsAwaited<T> = T extends Observable<infer U> ? U : T;
-
-// Promises
-export interface WithResolvers<T> {
-  promise: Promise<T>;
-  resolve: (value: T) => void;
-  reject: (error: unknown) => void;
-}

@@ -24,8 +24,8 @@ import type {
   TaskId,
   TaskInfo,
   TaskResult,
-  WithResolvers,
 } from './resolver.interface';
+import { withResolvers, type WithResolvers } from './shared/with-resolvers';
 
 /**
  * A dependency-aware task resolver that executes tasks in the correct order based on their dependencies.
@@ -258,7 +258,7 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
       }
 
       for (const task of this.tasks.values()) {
-        taskResults.set(task.id, this.withResolvers<readonly [string, TaskResult<unknown>]>());
+        taskResults.set(task.id, withResolvers<readonly [string, TaskResult<unknown>]>());
       }
 
       for (const task of this.tasks.values()) {
@@ -387,22 +387,6 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
     value: TValue | Promise<TValue> | Observable<TValue>,
   ): value is Promise<TValue> | Observable<TValue> {
     return typeof value === 'object' && value !== null && ('then' in value || 'subscribe' in value);
-  }
-
-  /**
-   * Creates a promise with its resolve and reject functions exposed.
-   *
-   * @returns An object containing the promise, resolve, and reject functions
-   */
-  private withResolvers<T>(): WithResolvers<T> {
-    let resolve: (value: T) => void;
-    let reject: (error: unknown) => void;
-    const promise = new Promise<T>((res, rej) => {
-      resolve = res;
-      reject = rej;
-    });
-
-    return { promise, resolve: resolve!, reject: reject! };
   }
 }
 

@@ -269,7 +269,15 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
           result = this.executeTask(task, {}, effectiveGlobalArgs);
         } else {
           result = forkJoin(task.producers.map((producer) => taskResults.get(producer)!.promise)).pipe(
-            map((args) => args.reduce((acc, [id, result]) => ({ ...acc, [id]: result }), {})),
+            map((args) =>
+              args.reduce(
+                (acc, [id, result]) => {
+                  acc[id] = result;
+                  return acc;
+                },
+                {} as Record<string, TaskResult<unknown>>,
+              ),
+            ),
             switchMap((args) => this.executeTask(task, args, effectiveGlobalArgs)),
           );
         }
@@ -289,7 +297,10 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
         map((data) => ({
           globalArgs: effectiveGlobalArgs,
           tasks: data.reduce(
-            (acc, [id, result]) => ({ ...acc, [id]: result }),
+            (acc, [id, result]) => {
+              acc[id] = result;
+              return acc;
+            },
             {} as Record<string, TaskResult<unknown>>,
           ),
         })),

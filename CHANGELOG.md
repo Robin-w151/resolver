@@ -1,5 +1,11 @@
 # @robinw151/resolver
 
+## 0.3.0
+
+### Minor Changes
+
+- 0cefd6c: improve task resolution algorithm
+
 ## 0.2.1
 
 ### Patch Changes

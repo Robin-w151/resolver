@@ -227,7 +227,6 @@ The `resolve()` method accepts an optional options parameter to control its beha
 interface ResolveOptions {
   globalArgs?: TGlobalArgs;
   withLoadingState?: boolean;
-  maxIterations?: number;
 }
 ```
 
@@ -285,22 +284,6 @@ resolver.resolve({ withLoadingState: true }).subscribe((result) => {
   } else {
     console.log('Final result:', result);
   }
-});
-```
-
-### `maxIterations` (default: `100`)
-
-Controls the maximum number of resolution iterations before throwing an error. This prevents infinite loops in case of resolution issues.
-
-- **Default**: `100` iterations
-- **Purpose**: Safety mechanism to prevent infinite resolution loops
-- **Error**: Throws an error if the limit is exceeded
-
-```typescript
-// Custom max iterations
-resolver.resolve({ maxIterations: 50 }).subscribe({
-  next: (result) => console.log('Result:', result),
-  error: (error) => console.error('Resolution failed:', error.message),
 });
 ```
 

@@ -1,7 +1,7 @@
 import { delay, finalize, firstValueFrom, lastValueFrom, of, throwError } from 'rxjs';
 import { describe, expect, test, vi } from 'vitest';
+import { isError, isLoading, isSuccess, Resolver } from '../src/resolver';
 import type { TaskResult } from '../src/resolver.interface';
-import { isError, isLoading, isSuccess, Resolver, RESOLVER_MAX_ITERATIONS } from '../src/resolver';
 
 describe('Resolver', () => {
   test('empty task graph', async () => {
@@ -304,16 +304,6 @@ describe('Resolver', () => {
     expect(result).toEqual({ globalArgs: undefined, tasks: { A: { data: 'undefined, World!' } } });
   });
 
-  test('resolve with too many iterations', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let resolver: any = new Resolver();
-    for (let i = 0; i < RESOLVER_MAX_ITERATIONS + 1; i++) {
-      resolver = resolver.register({ id: `${i}`, fn: () => i }, i > 0 ? [`${i - 1}`] : []);
-    }
-
-    await expect(lastValueFrom(resolver.resolve())).rejects.toThrowError('Max iterations reached');
-  });
-
   test('resolve with explicit loading state', async () => {
     const resolver = new Resolver().register({ id: 'A', fn: () => 1 }).register({ id: 'B', fn: () => 2 });
 
@@ -367,5 +357,16 @@ describe('Resolver', () => {
 
     expect(started).toHaveBeenCalledOnce();
     expect(finalizer).toHaveBeenCalledOnce();
+  });
+
+  test('start resolving tasks after resolve observable is subscribed to', async () => {
+    const taskA = vi.fn(() => 1);
+    const resolver = new Resolver().register({ id: 'A', fn: taskA });
+
+    const result = resolver.resolve();
+    expect(taskA).not.toHaveBeenCalled();
+
+    await lastValueFrom(result);
+    expect(taskA).toHaveBeenCalledOnce();
   });
 });

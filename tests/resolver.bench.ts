@@ -1,6 +1,6 @@
 import { lastValueFrom } from 'rxjs';
 import { bench, describe, expect } from 'vitest';
-import { hasNoErrors, Resolver } from '../src/resolver';
+import { hasNoErrors, isSuccess, Resolver } from '../src/resolver';
 import type { TaskResult } from '../src/resolver.interface';
 
 describe('Resolver benchmark', () => {
@@ -35,12 +35,9 @@ describe('Resolver benchmark', () => {
               id: taskId,
               fn: (deps, globalArgs) => {
                 const sum = Object.values(deps).reduce((acc, result) => {
-                  if ('data' in result) {
-                    return acc + result.data;
-                  }
-                  return acc;
+                  return acc + (isSuccess(result) ? result.data : 0);
                 }, 0);
-                return sum + i + (globalArgs || 0);
+                return sum + i + globalArgs;
               },
             },
             // @ts-expect-error - Type mismatch expected for dynamic dependency arrays

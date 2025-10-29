@@ -140,6 +140,42 @@ describe('Resolver', () => {
     });
   });
 
+  test('task graph with asynchronous error (Promise.reject)', async () => {
+    const resolver = new Resolver()
+      .register({
+        id: 'A',
+        fn: () => Promise.reject(new Error('Error in A')),
+      })
+      .register({ id: 'B', fn: () => 2 });
+
+    const result = await lastValueFrom(resolver.resolve());
+
+    expect(result).toEqual({
+      tasks: {
+        A: { error: new Error('Error in A') },
+        B: { data: 2 },
+      },
+    });
+  });
+
+  test('task graph with asynchronous error (Observable.throwError)', async () => {
+    const resolver = new Resolver()
+      .register({
+        id: 'A',
+        fn: () => throwError(() => new Error('Error in A')),
+      })
+      .register({ id: 'B', fn: () => 2 });
+
+    const result = await lastValueFrom(resolver.resolve());
+
+    expect(result).toEqual({
+      tasks: {
+        A: { error: new Error('Error in A') },
+        B: { data: 2 },
+      },
+    });
+  });
+
   test('complex task graph', async () => {
     const resolver = new Resolver()
       .register({ id: 'A', fn: () => 1 })

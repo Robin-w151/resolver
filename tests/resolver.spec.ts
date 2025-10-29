@@ -405,4 +405,22 @@ describe('Resolver', () => {
     await lastValueFrom(result);
     expect(taskA).toHaveBeenCalledOnce();
   });
+
+  test('registering a task with missing dependencies fails', async () => {
+    const resolver = new Resolver();
+
+    // @ts-expect-error - Missing dependency
+    expect(() => resolver.register({ id: 'A', fn: () => 1 }, ['B'])).toThrowError(
+      "Task with id 'A' has dependencies that have not been registered",
+    );
+  });
+
+  test('registering a task with a duplicate id fails', async () => {
+    const resolver = new Resolver().register({ id: 'A', fn: () => 1 });
+
+    // @ts-expect-error - Duplicate task id
+    expect(() => resolver.register({ id: 'A', fn: () => 2 })).toThrowError(
+      "Task with id 'A' has already been registered",
+    );
+  });
 });

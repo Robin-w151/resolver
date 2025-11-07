@@ -107,15 +107,19 @@ const resolver = new Resolver()
 try {
   const result = await lastValueFrom(resolver.resolve());
 
-  // Check for errors using utility functions
-  console.log('Some tasks failed during resolution');
-
   if (isError(result.tasks.fetchUser)) {
     console.error('User fetch failed:', result.tasks.fetchUser.error);
   }
+
   if (isError(result.tasks.fetchPosts)) {
     console.error('Posts fetch failed:', result.tasks.fetchPosts.error);
   }
+
+  if (isError(result.tasks.generateReport)) {
+    console.error('Report generation failed:', result.tasks.generateReport.error);
+  }
+
+  console.log('Report generated:', result.tasks.generateReport.data);
 } catch (error) {
   console.error('Resolution failed:', error);
 }

@@ -1,5 +1,11 @@
 # @robinw151/resolver
 
+## 0.3.1
+
+### Patch Changes
+
+- 3818092: improve advanced usage example in the README
+
 ## 0.3.0
 
 ### Minor Changes

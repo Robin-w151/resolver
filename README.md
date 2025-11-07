@@ -65,7 +65,7 @@ console.log(result); // { tasks: { A: { data: 'Hello' }, B: { data: 'World' }, C
 
 ```typescript
 import { lastValueFrom } from 'rxjs';
-import { Resolver, isSuccess, isError } from '@robinw151/resolver';
+import { Resolver, isSuccess, isError, hasNoErrors } from '@robinw151/resolver';
 
 const resolver = new Resolver()
   .register({
@@ -119,7 +119,9 @@ try {
     console.error('Report generation failed:', result.tasks.generateReport.error);
   }
 
-  console.log('Report generated:', result.tasks.generateReport.data);
+  if (hasNoErrors(result.tasks)) {
+    console.log('Report generated:', result.tasks.generateReport.data);
+  }
 } catch (error) {
   console.error('Resolution failed:', error);
 }

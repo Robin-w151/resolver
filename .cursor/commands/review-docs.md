@@ -10,8 +10,10 @@ Check all documentation relevant to the project and check if it is up to date an
 - Check if every docstring is up to date and consistent
 - Check if every docstring is formatted correctly
 - Check if every docstring is grammatically correct
+- Check if every example is up to date and consistent
 
 ### Check README.md
 
 - Check if the README.md is up to date and consistent
 - Cross check with docstrings in source code
+- Check if every example is up to date and consistent

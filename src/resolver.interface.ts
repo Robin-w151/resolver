@@ -29,8 +29,12 @@ export interface Task<TId extends string, TArgs = unknown, TGlobalArgs = unknown
   fn: (args: TArgs, globalArgs: TGlobalArgs) => TResult | Promise<TResult> | Observable<TResult>;
 }
 
-export interface TaskInfo<TId extends string, TArgs = unknown, TGlobalArgs = unknown, TResult = unknown>
-  extends Task<TId, TArgs, TGlobalArgs, TResult> {
+export interface TaskInfo<TId extends string, TArgs = unknown, TGlobalArgs = unknown, TResult = unknown> extends Task<
+  TId,
+  TArgs,
+  TGlobalArgs,
+  TResult
+> {
   consumers: Array<string>;
   producers: Array<string>;
 }

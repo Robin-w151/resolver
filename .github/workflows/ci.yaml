@@ -28,5 +28,9 @@ jobs:
         run: npm i -g @aikidosec/safe-chain
       - name: Install dependencies
         run: aikido-pnpm install --frozen-lockfile
-      - name: Run checks
-        run: pnpm check
+      - name: Run formatter
+        run: pnpm format
+      - name: Run linter
+        run: pnpm lint
+      - name: Run tests
+        run: pnpm test

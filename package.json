@@ -1,6 +1,6 @@
 {
   "name": "@robinw151/resolver",
-  "version": "0.3.1",
+  "version": "0.4.0-next.0",
   "description": "A dependency-aware task resolver using RxJS observables for asynchronous execution",
   "author": "Robin Wunderbaldinger",
   "license": "MIT",

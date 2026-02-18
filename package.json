@@ -68,7 +68,7 @@
     "husky": "9.1.7",
     "prettier": "3.8.1",
     "tsdown": "0.20.1",
-    "typescript": "6.0.0-dev.20260202",
+    "typescript": "6.0.0-beta",
     "typescript-eslint": "8.56.0",
     "vitest": "4.0.18"
   },

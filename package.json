@@ -11,19 +11,19 @@
   },
   "type": "module",
   "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/index.d.mts",
       "require": "./dist/index.cjs",
-      "import": "./dist/index.js"
+      "import": "./dist/index.mjs"
     },
     "./package.json": "./package.json"
   },
   "files": [
-    "dist/**/*.{js,cjs}",
-    "dist/**/*.d.{ts,cts}",
+    "dist/**/*.{mjs,cjs}",
+    "dist/**/*.d.{mts,cts}",
     "dist/**/*.map",
     "README.md",
     "LICENSE"

@@ -1,5 +1,11 @@
 # @robinw151/resolver
 
+## 0.4.0-next.1
+
+### Patch Changes
+
+- 8dafdaf: update package export paths
+
 ## 0.4.0-next.0
 
 ### Minor Changes

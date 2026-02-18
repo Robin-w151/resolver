@@ -5,6 +5,7 @@
     "@robinw151/resolver": "0.3.1"
   },
   "changesets": [
-    "ready-hoops-ring"
+    "ready-hoops-ring",
+    "real-turtles-attack"
   ]
 }

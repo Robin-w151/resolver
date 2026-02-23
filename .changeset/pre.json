@@ -1,0 +1,11 @@
+{
+  "mode": "pre",
+  "tag": "next",
+  "initialVersions": {
+    "@robinw151/resolver": "0.3.1"
+  },
+  "changesets": [
+    "ready-hoops-ring",
+    "real-turtles-attack"
+  ]
+}

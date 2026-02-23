@@ -1,6 +1,6 @@
 {
   "name": "@robinw151/resolver",
-  "version": "0.3.1",
+  "version": "0.4.0-next.1",
   "description": "A dependency-aware task resolver using RxJS observables for asynchronous execution",
   "author": "Robin Wunderbaldinger",
   "license": "MIT",
@@ -11,19 +11,19 @@
   },
   "type": "module",
   "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/index.d.mts",
       "require": "./dist/index.cjs",
-      "import": "./dist/index.js"
+      "import": "./dist/index.mjs"
     },
     "./package.json": "./package.json"
   },
   "files": [
-    "dist/**/*.{js,cjs}",
-    "dist/**/*.d.{ts,cts}",
+    "dist/**/*.{mjs,cjs}",
+    "dist/**/*.d.{mts,cts}",
     "dist/**/*.map",
     "README.md",
     "LICENSE"
@@ -40,7 +40,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsup",
+    "build": "tsdown",
     "format": "prettier --check **/*.ts",
     "lint": "eslint --no-warn-ignored **/*.ts",
     "test": "vitest run && tsc --noEmit --project tests/tsconfig.json",
@@ -67,8 +67,8 @@
     "eslint-config-prettier": "10.1.8",
     "husky": "9.1.7",
     "prettier": "3.8.1",
-    "tsup": "8.5.1",
-    "typescript": "5.9.3",
+    "tsdown": "0.20.1",
+    "typescript": "6.0.0-beta",
     "typescript-eslint": "8.56.0",
     "vitest": "4.0.18"
   },

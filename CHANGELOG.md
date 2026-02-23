@@ -1,5 +1,17 @@
 # @robinw151/resolver
 
+## 0.4.0-next.1
+
+### Patch Changes
+
+- 8dafdaf: update package export paths
+
+## 0.4.0-next.0
+
+### Minor Changes
+
+- 40d036e: Migrate to typescript 6 and tsdown
+
 ## 0.3.1
 
 ### Patch Changes

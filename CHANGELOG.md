@@ -1,5 +1,11 @@
 # @robinw151/resolver
 
+## 0.4.0-next.2
+
+### Patch Changes
+
+- 329d1bc: update typescript to release version
+
 ## 0.4.0-next.1
 
 ### Patch Changes

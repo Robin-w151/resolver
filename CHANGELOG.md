@@ -1,5 +1,11 @@
 # @robinw151/resolver
 
+## 0.4.0-next.3
+
+### Patch Changes
+
+- 23bd6c1: Update packages
+
 ## 0.4.0-next.2
 
 ### Patch Changes

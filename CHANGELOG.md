@@ -1,5 +1,17 @@
 # @robinw151/resolver
 
+## 0.4.0
+
+### Minor Changes
+
+- f9192d2: Migrate to typescript 6 and tsdown
+
+### Patch Changes
+
+- f9192d2: Update packages
+- f9192d2: update typescript to release version
+- f9192d2: update package export paths
+
 ## 0.4.0-next.3
 
 ### Patch Changes

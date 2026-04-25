@@ -28,6 +28,8 @@ jobs:
         run: npm i -g @aikidosec/safe-chain
       - name: Install dependencies
         run: aikido-pnpm install --frozen-lockfile
+      - name: Install playwright
+        run: pnpm exec playwright install --with-deps chromium
       - name: Run formatter
         run: pnpm format
       - name: Run linter

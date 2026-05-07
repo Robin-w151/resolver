@@ -64,13 +64,13 @@
     "@vitest/browser-playwright": "4.1.5",
     "@vitest/coverage-v8": "4.1.5",
     "clean-package": "2.2.0",
-    "eslint": "10.2.1",
+    "eslint": "10.3.0",
     "eslint-config-prettier": "10.1.8",
     "husky": "9.1.7",
     "prettier": "3.8.3",
     "tsdown": "0.21.10",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.59.1",
+    "typescript-eslint": "8.59.2",
     "vitest": "4.1.5"
   },
   "pnpm": {

@@ -26,3 +26,19 @@ type rxjsAwaitedTests = [
   Expect<Equal<RxjsAwaited<number>, number>>,
   Expect<Equal<RxjsAwaited<Observable<number>>, number>>,
 ];
+
+// Resolver constructor
+// Global args are optional exactly when `TGlobalArgs` can be `undefined`. Otherwise they are
+// required, because tasks receive them as `TGlobalArgs` and must not be handed `undefined`.
+new Resolver();
+new Resolver('hello');
+new Resolver<string | undefined>();
+new Resolver<{ apiKey: string } | undefined>();
+new Resolver<{ apiKey: string }>({ apiKey: 'key' });
+new Resolver<number>(0);
+
+// @ts-expect-error - Missing required global args
+new Resolver<{ apiKey: string }>();
+
+// @ts-expect-error - Missing required global args
+new Resolver<string>();

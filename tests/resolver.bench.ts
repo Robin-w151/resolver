@@ -10,7 +10,7 @@ describe('Resolver benchmark', () => {
       const TASK_COUNT = 1000;
       const MAX_DEPENDENCY_DEPTH = 5;
 
-      const resolver = new Resolver<number>();
+      const resolver = new Resolver<number>(0);
 
       // Create 1000 tasks with partial dependencies
       for (let i = 0; i < TASK_COUNT; i++) {

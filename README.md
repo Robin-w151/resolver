@@ -132,12 +132,10 @@ try {
 The resolver provides full TypeScript support with type inference:
 
 ```typescript
-import { isSuccess, isError } from '@robinw151/resolver';
+import { Resolver, isSuccess, isError } from '@robinw151/resolver';
 
-const resolver = new Resolver<{
-  user: { id: number; name: string };
-  posts: Array<{ id: number; title: string }>;
-}>()
+// Task result types are inferred from the registered task functions
+const resolver = new Resolver()
   .register({
     id: 'user',
     fn: () => ({ id: 1, name: 'John' }),
@@ -201,6 +199,33 @@ const resolver = new Resolver({ apiKey: 'your-api-key', baseUrl: 'https://api.ex
 
 const result = await lastValueFrom(resolver.resolve());
 console.log(result.globalArgs); // { apiKey: 'your-api-key', baseUrl: 'https://api.example.com' }
+```
+
+Because tasks receive the global arguments typed as `TGlobalArgs`, the constructor argument is required whenever `TGlobalArgs` cannot be `undefined`:
+
+```typescript
+new Resolver(); // OK - no global arguments at all
+new Resolver({ apiKey: 'your-api-key' }); // OK - type is inferred
+new Resolver<{ apiKey: string }>({ apiKey: 'your-api-key' }); // OK - explicit type, value provided
+
+new Resolver<{ apiKey: string }>(); // Error - tasks would receive `undefined`
+```
+
+If the arguments are only known later and are supplied through `setGlobalArgs()` or `resolve({ globalArgs })`, include `undefined` in the type. Task functions then have to narrow it before use:
+
+```typescript
+const resolver = new Resolver<{ apiKey: string } | undefined>().register({
+  id: 'fetchUser',
+  fn: (_args, globalArgs) => {
+    if (!globalArgs) {
+      throw new Error('Global arguments have not been set');
+    }
+
+    return fetch('/user', { headers: { Authorization: `Bearer ${globalArgs.apiKey}` } });
+  },
+});
+
+resolver.setGlobalArgs({ apiKey: 'your-api-key' });
 ```
 
 ### Dynamic Global Arguments

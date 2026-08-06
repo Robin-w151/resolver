@@ -309,12 +309,6 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
         })),
       ) as ResolverResult<TGlobalArgs, TResult>;
 
-      // The teardown has to be attached to the observable that is handed to the caller, not to
-      // `resultWithState`. With a loading state the caller receives a `concat`, which only
-      // subscribes to `resultWithState` once the loading value has completed. A caller that
-      // unsubscribes while the loading value is being delivered (`take(1)`, `first()`,
-      // `firstValueFrom`) would otherwise never subscribe to `resultWithState`, so its teardown
-      // would never run and the already running tasks would keep executing uncancelled.
       const result: Observable<unknown> = withLoadingState
         ? concat(of({ loading: true } as const), resultWithState)
         : resultWithState;

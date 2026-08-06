@@ -1,6 +1,7 @@
 import {
   catchError,
   concat,
+  defaultIfEmpty,
   defer,
   finalize,
   forkJoin,
@@ -389,13 +390,29 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
       }
 
       return taskResultObservable.pipe(
-        map((data) => ({ data })),
-        catchError((error) => of({ error })),
+        map((data) => ({ data }) as TaskResult<unknown>),
+        defaultIfEmpty({ error: new EmptyTaskError(task.id) } as TaskResult<unknown>),
+        catchError((error) => of({ error } as TaskResult<unknown>)),
         map((data) => [task.id, data] as const),
       );
     } catch (error) {
       return of([task.id, { error }] as const);
     }
+  }
+}
+
+/**
+ * Error used as a task's result when the task's Observable completes without emitting a value.
+ *
+ * A task must produce exactly one value to satisfy its consumers. An Observable that completes
+ * empty (for example after `filter()` removes every value, or when returning `EMPTY`) cannot
+ * satisfy that contract, so the task is resolved with this error instead. Consumers observe it
+ * like any other task failure via `isError()`.
+ */
+export class EmptyTaskError extends Error {
+  constructor(readonly taskId: string) {
+    super(`Task with id '${taskId}' completed without emitting a value`);
+    this.name = 'EmptyTaskError';
   }
 }
 

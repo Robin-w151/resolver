@@ -1,6 +1,7 @@
 import {
   catchError,
   concat,
+  defaultIfEmpty,
   defer,
   finalize,
   forkJoin,
@@ -15,16 +16,17 @@ import {
   takeUntil,
   tap,
 } from 'rxjs';
-import type {
-  ResolverResult,
-  ResolverResultWithLoadingState,
-  ResolverType,
-  RxjsAwaited,
-  Task,
-  TaskDependencies,
-  TaskId,
-  TaskInfo,
-  TaskResult,
+import {
+  EmptyTaskError,
+  type ResolverResult,
+  type ResolverResultWithLoadingState,
+  type ResolverType,
+  type RxjsAwaited,
+  type Task,
+  type TaskDependencies,
+  type TaskId,
+  type TaskInfo,
+  type TaskResult,
 } from './resolver.interface';
 import { isPromise, withResolvers, type WithResolvers } from './shared/promise-helper';
 
@@ -389,8 +391,9 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
       }
 
       return taskResultObservable.pipe(
-        map((data) => ({ data })),
-        catchError((error) => of({ error })),
+        map((data) => ({ data }) as TaskResult<unknown>),
+        defaultIfEmpty({ error: new EmptyTaskError(task.id) } as TaskResult<unknown>),
+        catchError((error) => of({ error } as TaskResult<unknown>)),
         map((data) => [task.id, data] as const),
       );
     } catch (error) {

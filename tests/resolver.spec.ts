@@ -1,7 +1,7 @@
-import { delay, finalize, firstValueFrom, lastValueFrom, of, throwError } from 'rxjs';
+import { delay, EMPTY, filter, finalize, firstValueFrom, lastValueFrom, of, throwError } from 'rxjs';
 import { describe, expect, test, vi } from 'vitest';
 import { isError, isLoading, isSuccess, Resolver } from '../src/resolver';
-import type { TaskResult } from '../src/resolver.interface';
+import { EmptyTaskError, type TaskResult } from '../src/resolver.interface';
 
 describe('Resolver', () => {
   test('empty task graph', async () => {
@@ -422,5 +422,58 @@ describe('Resolver', () => {
     expect(() => resolver.register({ id: 'A', fn: () => 2 })).toThrowError(
       "Task with id 'A' has already been registered",
     );
+  });
+
+  test('task with observable that completes without emitting', async () => {
+    const resolver = new Resolver().register({ id: 'A', fn: () => EMPTY }).register({ id: 'B', fn: () => 2 });
+
+    const result = await lastValueFrom(resolver.resolve());
+
+    expect(result).toEqual({
+      tasks: {
+        A: { error: new EmptyTaskError('A') },
+        B: { data: 2 },
+      },
+    });
+  });
+
+  test('task with observable that is filtered to empty', async () => {
+    const resolver = new Resolver().register({ id: 'A', fn: () => of(1, 2, 3).pipe(filter((value) => value > 10)) });
+
+    const result = await lastValueFrom(resolver.resolve());
+
+    expect(isError(result.tasks.A)).toBe(true);
+    expect(result.tasks.A).toEqual({ error: new EmptyTaskError('A') });
+  });
+
+  test('task that depends on an empty task can recover', async () => {
+    const resolver = new Resolver().register({ id: 'A', fn: () => EMPTY }).register(
+      {
+        id: 'B',
+        fn: ({ A }) => (isSuccess(A) ? A.data : 'fallback'),
+      },
+      ['A'],
+    );
+
+    const result = await lastValueFrom(resolver.resolve());
+
+    expect(result).toEqual({
+      tasks: {
+        A: { error: new EmptyTaskError('A') },
+        B: { data: 'fallback' },
+      },
+    });
+  });
+
+  test('task that emits undefined is not treated as empty', async () => {
+    const resolver = new Resolver()
+      .register({ id: 'A', fn: () => undefined })
+      .register({ id: 'B', fn: () => of(null) });
+
+    const result = await lastValueFrom(resolver.resolve());
+
+    expect(result).toEqual({ tasks: { A: { data: undefined }, B: { data: null } } });
+    expect(isSuccess(result.tasks.A)).toBe(true);
+    expect(isSuccess(result.tasks.B)).toBe(true);
   });
 });

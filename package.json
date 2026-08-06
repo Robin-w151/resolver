@@ -74,11 +74,6 @@
     "typescript-eslint": "8.65.0",
     "vitest": "4.1.10"
   },
-  "pnpm": {
-    "overrides": {
-      "glob": "^11.1.0"
-    }
-  },
   "packageManager": "pnpm@11.10.0",
   "clean-package": {
     "remove": [

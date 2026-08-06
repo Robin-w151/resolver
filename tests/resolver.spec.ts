@@ -1,4 +1,4 @@
-import { delay, EMPTY, filter, finalize, firstValueFrom, lastValueFrom, of, throwError } from 'rxjs';
+import { delay, EMPTY, filter, finalize, firstValueFrom, lastValueFrom, NEVER, of, take, throwError } from 'rxjs';
 import { describe, expect, test, vi } from 'vitest';
 import { isError, isLoading, isSuccess, Resolver } from '../src/resolver';
 import { type TaskResult } from '../src/resolver.interface';
@@ -394,6 +394,59 @@ describe('Resolver', () => {
 
     expect(started).toHaveBeenCalledOnce();
     expect(finalizer).toHaveBeenCalledOnce();
+  });
+
+  test('task graph with long running task and cancellation with loading state', async () => {
+    const started = vi.fn();
+    const finalizer = vi.fn();
+    const resolver = new Resolver().register({
+      id: 'A',
+      fn: () => {
+        started();
+        return of(1).pipe(delay(1000), finalize(finalizer));
+      },
+    });
+
+    const subscription = resolver.resolve({ withLoadingState: true }).pipe(take(1)).subscribe();
+
+    subscription.unsubscribe();
+
+    expect(started).toHaveBeenCalledOnce();
+    expect(finalizer).toHaveBeenCalledOnce();
+  });
+
+  test('task graph with cancellation after consuming only the loading state', async () => {
+    const finalizer = vi.fn();
+    const resolver = new Resolver().register({
+      id: 'A',
+      fn: () => of(1).pipe(delay(1000), finalize(finalizer)),
+    });
+
+    const result = await firstValueFrom(resolver.resolve({ withLoadingState: true }));
+
+    expect(result).toEqual({ loading: true });
+    expect(finalizer).toHaveBeenCalledOnce();
+  });
+
+  test('task graph with never completing task and cancellation with loading state', async () => {
+    const finalizer = vi.fn();
+    const resolver = new Resolver().register({ id: 'A', fn: () => NEVER.pipe(finalize(finalizer)) });
+
+    await firstValueFrom(resolver.resolve({ withLoadingState: true }));
+
+    expect(finalizer).toHaveBeenCalledOnce();
+  });
+
+  test('dependent task is not executed after cancellation with loading state', async () => {
+    const taskB = vi.fn(() => 2);
+    const resolver = new Resolver()
+      .register({ id: 'A', fn: () => of(1).pipe(delay(10)) })
+      .register({ id: 'B', fn: taskB }, ['A']);
+
+    await firstValueFrom(resolver.resolve({ withLoadingState: true }));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(taskB).not.toHaveBeenCalled();
   });
 
   test('start resolving tasks after resolve observable is subscribed to', async () => {

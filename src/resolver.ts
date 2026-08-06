@@ -307,13 +307,18 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
             {} as Record<string, TaskResult<unknown>>,
           ),
         })),
+      ) as ResolverResult<TGlobalArgs, TResult>;
+
+      const result: Observable<unknown> = withLoadingState
+        ? concat(of({ loading: true } as const), resultWithState)
+        : resultWithState;
+
+      return result.pipe(
         finalize(() => {
           destroy.next();
           destroy.complete();
         }),
-      ) as ResolverResult<TGlobalArgs, TResult>;
-
-      return (withLoadingState ? concat(of({ loading: true } as const), resultWithState) : resultWithState) as never;
+      ) as never;
     });
   }
 

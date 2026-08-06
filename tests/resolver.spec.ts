@@ -1,7 +1,8 @@
 import { delay, EMPTY, filter, finalize, firstValueFrom, lastValueFrom, of, throwError } from 'rxjs';
 import { describe, expect, test, vi } from 'vitest';
 import { isError, isLoading, isSuccess, Resolver } from '../src/resolver';
-import { EmptyTaskError, type TaskResult } from '../src/resolver.interface';
+import { type TaskResult } from '../src/resolver.interface';
+import { EmptyTaskError } from '../src/error';
 
 describe('Resolver', () => {
   test('empty task graph', async () => {

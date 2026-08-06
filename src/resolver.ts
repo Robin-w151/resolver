@@ -17,7 +17,6 @@ import {
   tap,
 } from 'rxjs';
 import {
-  EmptyTaskError,
   type ResolverResult,
   type ResolverResultWithLoadingState,
   type ResolverType,
@@ -29,6 +28,7 @@ import {
   type TaskResult,
 } from './resolver.interface';
 import { isPromise, withResolvers, type WithResolvers } from './shared/promise-helper';
+import { EmptyTaskError } from './error';
 
 /**
  * A dependency-aware task resolver that executes tasks in the correct order based on their dependencies.

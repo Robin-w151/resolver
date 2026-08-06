@@ -16,16 +16,17 @@ import {
   takeUntil,
   tap,
 } from 'rxjs';
-import type {
-  ResolverResult,
-  ResolverResultWithLoadingState,
-  ResolverType,
-  RxjsAwaited,
-  Task,
-  TaskDependencies,
-  TaskId,
-  TaskInfo,
-  TaskResult,
+import {
+  EmptyTaskError,
+  type ResolverResult,
+  type ResolverResultWithLoadingState,
+  type ResolverType,
+  type RxjsAwaited,
+  type Task,
+  type TaskDependencies,
+  type TaskId,
+  type TaskInfo,
+  type TaskResult,
 } from './resolver.interface';
 import { isPromise, withResolvers, type WithResolvers } from './shared/promise-helper';
 
@@ -398,21 +399,6 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
     } catch (error) {
       return of([task.id, { error }] as const);
     }
-  }
-}
-
-/**
- * Error used as a task's result when the task's Observable completes without emitting a value.
- *
- * A task must produce exactly one value to satisfy its consumers. An Observable that completes
- * empty (for example after `filter()` removes every value, or when returning `EMPTY`) cannot
- * satisfy that contract, so the task is resolved with this error instead. Consumers observe it
- * like any other task failure via `isError()`.
- */
-export class EmptyTaskError extends Error {
-  constructor(readonly taskId: string) {
-    super(`Task with id '${taskId}' completed without emitting a value`);
-    this.name = 'EmptyTaskError';
   }
 }
 

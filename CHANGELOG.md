@@ -1,5 +1,16 @@
 # @robinw151/resolver
 
+## 0.4.1
+
+### Patch Changes
+
+- c2958f2: Fix resolution hanging forever when a task's Observable completes without emitting a value. Such
+  tasks now resolve with an `EmptyTaskError` instead of leaving the whole task graph pending.
+- 6cfa059: Fix tasks not being cancelled when a resolution using `withLoadingState` is unsubscribed while the
+  loading state is emitted. Consuming only the loading state (for example via `take(1)` or
+  `firstValueFrom`) left the running tasks without a teardown, so they kept executing, dependent tasks
+  still started, and never completing tasks stayed subscribed indefinitely.
+
 ## 0.4.0
 
 ### Minor Changes

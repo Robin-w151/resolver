@@ -356,11 +356,18 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
    * resolver
    *   .register({
    *     id: 'user',
-   *     fn: (deps, globalArgs) => fetchUser(`${globalArgs?.baseUrl}/user`, { headers: { 'Authorization': `Bearer ${globalArgs?.apiKey}` } })
+   *     fn: (deps, globalArgs) => {
+   *       // `undefined` is part of the type, so it has to be narrowed before use
+   *       if (!globalArgs) throw new Error('Global arguments have not been set');
+   *       return fetchUser(`${globalArgs.baseUrl}/user`, { headers: { 'Authorization': `Bearer ${globalArgs.apiKey}` } });
+   *     }
    *   })
    *   .register({
    *     id: 'posts',
-   *     fn: ({ user }, globalArgs) => fetchPosts(`${globalArgs?.baseUrl}/posts`, { userId: user.data.id, headers: { 'Authorization': `Bearer ${globalArgs?.apiKey}` } })
+   *     fn: ({ user }, globalArgs) => {
+   *       if (!globalArgs) throw new Error('Global arguments have not been set');
+   *       return fetchPosts(`${globalArgs.baseUrl}/posts`, { userId: user.data.id, headers: { 'Authorization': `Bearer ${globalArgs.apiKey}` } });
+   *     }
    *   }, ['user']);
    *
    * // Set initial global args

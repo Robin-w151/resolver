@@ -132,7 +132,7 @@ try {
 The resolver provides full TypeScript support with type inference:
 
 ```typescript
-import { isSuccess, isError } from '@robinw151/resolver';
+import { Resolver, isSuccess, isError } from '@robinw151/resolver';
 
 // Task result types are inferred from the registered task functions
 const resolver = new Resolver()
@@ -216,7 +216,13 @@ If the arguments are only known later and are supplied through `setGlobalArgs()`
 ```typescript
 const resolver = new Resolver<{ apiKey: string } | undefined>().register({
   id: 'fetchUser',
-  fn: (_args, globalArgs) => fetch('/user', { headers: { Authorization: `Bearer ${globalArgs?.apiKey}` } }),
+  fn: (_args, globalArgs) => {
+    if (!globalArgs) {
+      throw new Error('Global arguments have not been set');
+    }
+
+    return fetch('/user', { headers: { Authorization: `Bearer ${globalArgs.apiKey}` } });
+  },
 });
 
 resolver.setGlobalArgs({ apiKey: 'your-api-key' });

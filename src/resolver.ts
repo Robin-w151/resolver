@@ -80,18 +80,24 @@ import { EmptyTaskError } from './error';
 export class Resolver<TGlobalArgs = unknown, TResult = object> {
   private readonly tasks = new Map<string, TaskInfo<string>>();
 
+  private globalArgs?: TGlobalArgs;
+
   /**
-   * Creates a new Resolver instance with optional global arguments.
+   * Creates a new Resolver instance with global arguments.
    *
    * The constructor initializes a new Resolver that can manage and execute tasks with
    * dependency resolution. Global arguments are shared across all tasks and provide
    * a way to pass common configuration, authentication tokens, API endpoints, or other
    * contextual data that multiple tasks might need.
    *
-   * @param globalArgs - Optional global arguments object that will be passed to all
-   *   task functions during execution. These arguments are provided as the second
-   *   parameter to each task function, alongside the resolved dependencies. If not
-   *   provided, tasks will receive `undefined` as their global arguments.
+   * @param globalArgs - Global arguments object that will be passed to all task functions
+   *   during execution. These arguments are provided as the second parameter to each task
+   *   function, alongside the resolved dependencies.
+   *
+   *   The argument is **required** whenever `TGlobalArgs` cannot be `undefined`, because task
+   *   functions receive it as `TGlobalArgs` and would otherwise be handed an `undefined` value
+   *   that their type does not allow. Use `Resolver<TGlobalArgs | undefined>` when the arguments
+   *   are only known later and are supplied through `setGlobalArgs()` or `resolve({ globalArgs })`.
    *
    * @example
    * ```typescript
@@ -104,6 +110,10 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
    *   baseUrl: 'https://api.example.com'
    * });
    *
+   * // Create resolver whose global args are provided later
+   * const resolverWithLateArgs = new Resolver<{ apiKey: string } | undefined>();
+   * resolverWithLateArgs.setGlobalArgs({ apiKey: 'your-api-key' });
+   *
    * // Register tasks that use global args
    * resolverWithArgs.register({
    *   id: 'user',
@@ -115,7 +125,9 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
    * });
    * ```
    */
-  constructor(private globalArgs?: TGlobalArgs) {}
+  constructor(...args: undefined extends TGlobalArgs ? [globalArgs?: TGlobalArgs] : [globalArgs: TGlobalArgs]) {
+    this.globalArgs = (args as [TGlobalArgs?])[0];
+  }
 
   /**
    * Registers a new task with the resolver, optionally specifying its dependencies.
@@ -338,16 +350,17 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
    *
    * @example
    * ```typescript
-   * const resolver = new Resolver<{ apiKey: string; baseUrl: string }>();
+   * // The global args are supplied later, so `undefined` has to be part of their type
+   * const resolver = new Resolver<{ apiKey: string; baseUrl: string } | undefined>();
    *
    * resolver
    *   .register({
    *     id: 'user',
-   *     fn: (deps, { apiKey, baseUrl }) => fetchUser(`${baseUrl}/user`, { headers: { 'Authorization': `Bearer ${apiKey}` } })
+   *     fn: (deps, globalArgs) => fetchUser(`${globalArgs?.baseUrl}/user`, { headers: { 'Authorization': `Bearer ${globalArgs?.apiKey}` } })
    *   })
    *   .register({
    *     id: 'posts',
-   *     fn: ({ user }, { apiKey, baseUrl }) => fetchPosts(`${baseUrl}/posts`, { userId: user.data.id, headers: { 'Authorization': `Bearer ${apiKey}` } })
+   *     fn: ({ user }, globalArgs) => fetchPosts(`${globalArgs?.baseUrl}/posts`, { userId: user.data.id, headers: { 'Authorization': `Bearer ${globalArgs?.apiKey}` } })
    *   }, ['user']);
    *
    * // Set initial global args

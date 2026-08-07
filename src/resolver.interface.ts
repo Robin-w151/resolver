@@ -44,8 +44,9 @@ export interface Task<TId extends string, TArgs = unknown, TGlobalArgs = unknown
    * `Observable`.
    *
    * For an `Observable` the **first emitted value** becomes the task's result and the subscription
-   * is then closed, so later emissions never occur and the source is cancelled. A source that
-   * completes without emitting resolves the task with an `EmptyTaskError`.
+   * is then closed, so later emissions are never observed and sources that honor unsubscription
+   * are cancelled. A source that completes without emitting resolves the task with an
+   * `EmptyTaskError`.
    *
    * Pipe the source when a different value is needed, for example `last()` to wait for the final
    * value of a completing source, or `toArray()` to collect every value:
@@ -56,8 +57,9 @@ export interface Task<TId extends string, TArgs = unknown, TGlobalArgs = unknown
    * fn: () => of(1, 2, 3).pipe(toArray()); // { data: [1, 2, 3] }
    * ```
    *
-   * Note that `last()` never emits for a source that does not complete, which leaves the task,
-   * and therefore the whole resolution, pending indefinitely.
+   * Note that `last()` and `toArray()` only emit once the source completes. Applying either to a
+   * source that does not complete leaves the task, and therefore the whole resolution, pending
+   * indefinitely.
    */
   fn: (args: TArgs, globalArgs: TGlobalArgs) => TResult | Promise<TResult> | Observable<TResult>;
 }

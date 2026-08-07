@@ -143,7 +143,12 @@ export class Resolver<TGlobalArgs = unknown, TResult = object> {
    *
    * @param task - The task configuration object containing:
    *   - `id`: Unique identifier for the task
-   *   - `fn`: Function that executes the task, receiving resolved dependencies and global args
+   *   - `fn`: Function that executes the task, receiving resolved dependencies and global args.
+   *     It may return a plain value, a `Promise` or an `Observable`. For an `Observable` the first
+   *     emitted value becomes the task's result and the subscription is then closed, so later
+   *     emissions are never observed and sources that honor unsubscription are cancelled. Pipe the
+   *     source with `last()` or `toArray()` when a different value is needed, keeping in mind that
+   *     both only emit once the source completes.
    * @param dependencies - Optional array of task IDs that this task depends on. These tasks
    *   must be registered before this task and will be resolved before this task executes.
    *

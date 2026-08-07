@@ -158,12 +158,62 @@ const resolver = new Resolver()
   );
 ```
 
+## Task Results
+
+Every task produces exactly one result. A task function may return a plain value, a `Promise` or an `Observable`:
+
+```typescript
+import { of } from 'rxjs';
+
+const resolver = new Resolver()
+  .register({ id: 'value', fn: () => 1 })
+  .register({ id: 'promise', fn: () => Promise.resolve(2) })
+  .register({ id: 'observable', fn: () => of(3) });
+```
+
+For an `Observable` the **first emitted value** becomes the task's result. The subscription is closed right after that value, so later emissions are never observed, and sources that honor unsubscription are cancelled:
+
+```typescript
+// Only the first value is used, the subscription is closed afterwards
+fn: () => of(1, 2, 3); // { data: 1 }
+
+// Observed as events, an HttpClient request emits `HttpEventType.Sent` first,
+// so the task resolves with that event and the request is cancelled
+fn: () => http.get('/user', { observe: 'events', reportProgress: true });
+```
+
+Pipe the source when a different value is needed:
+
+```typescript
+import { last, toArray } from 'rxjs';
+
+fn: () => of(1, 2, 3).pipe(last()); // { data: 3 }
+fn: () => of(1, 2, 3).pipe(toArray()); // { data: [1, 2, 3] }
+```
+
+Keep in mind that `last()` and `toArray()` only emit once the source completes. Applying either to a source that never completes leaves the task, and therefore the whole resolution, pending indefinitely. The default behavior has no such risk, which is why an infinite source such as `interval(1000)` resolves with its first value instead of hanging.
+
+A source that completes without emitting any value cannot produce a result. Such a task resolves with an [`EmptyTaskError`](#error-handling) instead of blocking the resolution:
+
+```typescript
+import { EMPTY, lastValueFrom } from 'rxjs';
+import { EmptyTaskError, isError, Resolver } from '@robinw151/resolver';
+
+const result = await lastValueFrom(new Resolver().register({ id: 'empty', fn: () => EMPTY }).resolve());
+
+if (isError(result.tasks.empty)) {
+  console.log(result.tasks.empty.error instanceof EmptyTaskError); // true
+}
+```
+
 ## Error Handling
 
 Tasks can return either successful data or errors. The resolver handles both cases gracefully:
 
 - Successful tasks return `{ data: TResult }`
 - Failed tasks return `{ error: unknown }`
+
+A task whose `Observable` completes without emitting a value fails with an `EmptyTaskError`, which is exported from the package and carries the `taskId` of the task that produced it.
 
 ## Global Arguments
 

@@ -4,3 +4,4 @@ onlyBuiltDependencies:
   - esbuild
 overrides:
   'glob': '^11.1.0'
+minimumReleaseAge: 2880

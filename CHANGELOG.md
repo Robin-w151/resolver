@@ -1,5 +1,16 @@
 # @robinw151/resolver
 
+## 0.5.2
+
+### Patch Changes
+
+- Keep the result of a task whose id is a reserved object key such as `__proto__`. Results were
+  collected by assigning to a plain object, so a task with the id `__proto__` replaced the prototype
+  of the `tasks` object returned by `resolve()` and of the dependency results handed to dependent
+  tasks instead of being stored as an own property. Its result was missing from `tasks`, and the
+  objects inherited from the task's result. Both objects are now built with `Object.fromEntries()`,
+  so every task id becomes an own property.
+
 ## 0.5.1
 
 ### Patch Changes

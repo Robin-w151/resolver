@@ -530,4 +530,18 @@ describe('Resolver', () => {
     expect(isSuccess(result.tasks.A)).toBe(true);
     expect(isSuccess(result.tasks.B)).toBe(true);
   });
+
+  test('task with a reserved object key as id keeps its result', async () => {
+    const resolver = new Resolver()
+      .register({ id: '__proto__', fn: () => 1 })
+      .register({ id: 'B', fn: (args) => (args as Record<string, TaskResult<number>>)['__proto__'] }, ['__proto__']);
+
+    const result = await lastValueFrom(resolver.resolve());
+    const tasks = result.tasks as Record<string, TaskResult<unknown>>;
+
+    expect(Object.hasOwn(tasks, '__proto__')).toBe(true);
+    expect(tasks['__proto__']).toEqual({ data: 1 });
+    expect(tasks['B']).toEqual({ data: { data: 1 } });
+    expect(Object.getPrototypeOf(tasks)).toBe(Object.prototype);
+  });
 });

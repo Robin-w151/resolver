@@ -61,8 +61,8 @@
     "@commitlint/config-conventional": "21.2.3",
     "@eslint/js": "10.0.1",
     "@types/node": "24.19.0",
-    "@vitest/browser-playwright": "4.1.11",
-    "@vitest/coverage-v8": "4.1.11",
+    "@vitest/browser-playwright": "5.0.5",
+    "@vitest/coverage-v8": "5.0.5",
     "clean-package": "2.2.0",
     "eslint": "10.11.0",
     "eslint-config-prettier": "10.1.8",
@@ -72,7 +72,7 @@
     "tsdown": "0.23.0",
     "typescript": "6.0.3",
     "typescript-eslint": "8.71.0",
-    "vitest": "4.1.11"
+    "vitest": "5.0.5"
   },
   "packageManager": "pnpm@11.21.0",
   "clean-package": {

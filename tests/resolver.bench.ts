@@ -1,12 +1,11 @@
 import { lastValueFrom } from 'rxjs';
-import { bench, describe, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { hasNoErrors, isSuccess, Resolver } from '../src/resolver';
 import type { TaskResult } from '../src/resolver.interface';
 
 describe('Resolver benchmark', () => {
-  bench(
-    'resolver with 1000 tasks partially depending on another',
-    async () => {
+  test('resolver with 1000 tasks partially depending on another', async ({ bench }) => {
+    await bench('resolve 1000 tasks', async () => {
       const TASK_COUNT = 1000;
       const MAX_DEPENDENCY_DEPTH = 5;
 
@@ -48,7 +47,6 @@ describe('Resolver benchmark', () => {
 
       const result = await lastValueFrom(resolver.resolve({ globalArgs: 10 }));
       expect(hasNoErrors(result.tasks as Record<string, TaskResult<number>>)).toBe(true);
-    },
-    { iterations: 100 },
-  );
+    }).run({ iterations: 100 });
+  });
 });

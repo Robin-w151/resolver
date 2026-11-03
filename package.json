@@ -74,7 +74,7 @@
     "typescript-eslint": "8.72.1",
     "vitest": "5.0.5"
   },
-  "packageManager": "pnpm@11.21.0",
+  "packageManager": "pnpm@12.17.0",
   "clean-package": {
     "remove": [
       "clean-package",
